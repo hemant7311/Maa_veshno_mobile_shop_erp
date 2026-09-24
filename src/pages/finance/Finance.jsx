@@ -37,14 +37,22 @@ const AddFinanceModal = ({ onClose }) => {
   )
 }
 
-/* ── Modal: Customer Finance Details ── */
 const CustomerFinanceDetailsModal = ({ record, onClose }) => {
   const tenureMatch = String(record.tenure || '6').match(/\d+/);
   const tenure = tenureMatch ? parseInt(tenureMatch[0], 10) : 6;
   const emiAmount = record.emiAmount || Math.round(record.usedLimit / tenure);
   
   const [showBill, setShowBill] = useState(false);
-    const [emiSchedule, setEmiSchedule] = useState(() => {
+  const [emiSchedule, setEmiSchedule] = useState(() => {
+    if (record.installments && record.installments.length > 0) {
+      return record.installments.map(inst => ({
+        id: inst.installmentNumber,
+        dueDate: new Date(inst.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+        amount: inst.expectedAmount,
+        status: inst.status
+      }))
+    }
+    // Legacy fallback just in case
     return Array.from({ length: tenure }).map((_, i) => {
       const date = new Date(record.createdAt || new Date())
       date.setMonth(date.getMonth() + i + 1)
@@ -58,16 +66,67 @@ const CustomerFinanceDetailsModal = ({ record, onClose }) => {
   })
 
   const toggleStatus = async (id) => {
+    const currentEmi = emiSchedule.find(e => e.id === id);
+    let newStatus = currentEmi.status === 'Paid' ? 'Pending' : 'Paid';
+    let paymentAmount = undefined;
+    
+    if (currentEmi.status === 'Partially Paid') {
+      const action = prompt(`EMI ${id} is Partially Paid. Remaining: ₹${currentEmi.remainingAmount}.\nType 'pay' to pay remaining, or 'reverse' to undo payment:`, 'pay');
+      if (action === null) return;
+      if (action.trim().toLowerCase() === 'reverse') {
+         newStatus = 'Pending';
+      } else {
+         newStatus = 'Paid';
+      }
+    }
+
+    if (newStatus === 'Paid') {
+      const defaultAmount = currentEmi.remainingAmount !== undefined ? currentEmi.remainingAmount : currentEmi.amount;
+      const inputAmount = prompt(`Enter payment amount for EMI ${id} (Remaining: ₹${defaultAmount}):`, defaultAmount);
+      if (inputAmount === null) return; // Cancelled
+      
+      paymentAmount = Number(inputAmount);
+      if (isNaN(paymentAmount) || paymentAmount <= 0) {
+        alert('Invalid amount entered.');
+        return;
+      }
+    } else {
+      if (!window.confirm(`Are you sure you want to REVERSE this payment? This will refund ₹${currentEmi.amount - (currentEmi.remainingAmount !== undefined ? currentEmi.remainingAmount : 0)} to the customer's balance.`)) {
+        return;
+      }
+    }
+
+    // Optimistic update
     setEmiSchedule(prev => prev.map(emi => 
-      emi.id === id 
-        ? { ...emi, status: emi.status === 'Paid' ? 'Pending' : 'Paid' }
-        : emi
-    ))
+      emi.id === id ? { ...emi, status: newStatus } : emi
+    ));
     
     try {
-      await api.put(`/finance/${record._id}/emi/${id}`, { status: emiSchedule.find(e => e.id === id).status === 'Paid' ? 'Pending' : 'Paid' })
+      const res = await api.put(`/finance/${record._id}/emi/${id}`, { status: newStatus, amount: paymentAmount });
+      if (res.data?.data?.installments) {
+        // Sync with backend truth
+        setEmiSchedule(res.data.data.installments.map(inst => ({
+          id: inst.installmentNumber,
+          dueDate: new Date(inst.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          amount: inst.expectedAmount,
+          status: inst.status,
+          remainingAmount: inst.remainingAmount
+        })));
+      }
     } catch (err) {
-      console.error('Failed to sync EMI status', err)
+      console.error('Failed to sync EMI status', err);
+      alert(err.response?.data?.message || 'Failed to update EMI status');
+      // Re-fetch to revert optimistic update
+      const res = await api.get(`/finance/customer/${record.mobileNumber}`);
+      if (res.data?.data?.installments) {
+        setEmiSchedule(res.data.data.installments.map(inst => ({
+          id: inst.installmentNumber,
+          dueDate: new Date(inst.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
+          amount: inst.expectedAmount,
+          status: inst.status,
+          remainingAmount: inst.remainingAmount
+        })));
+      }
     }
   }
 

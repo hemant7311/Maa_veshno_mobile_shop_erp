@@ -18,7 +18,8 @@ const SelectProductModal = ({ onClose, onSelect }) => {
   }, [])
 
   const filtered = products.filter(p =>
-    p.imeiNumber && p.imeiNumber.toLowerCase().includes(search.toLowerCase())
+    (p.imeiNumber && p.imeiNumber.toLowerCase().includes(search.toLowerCase())) ||
+    (p.barcode && p.barcode.toLowerCase().includes(search.toLowerCase()))
   )
 
   return (
@@ -27,7 +28,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
         <div className="modal-header" style={{ padding: '16px 20px' }}>
           <div>
             <h2 className="modal-title" style={{ fontSize: '15px' }}>Select Product</h2>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Choose product to add to bill (by IMEI)</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Choose product to add to bill (by IMEI or Barcode)</p>
           </div>
           <button className="modal-close" onClick={onClose}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -40,7 +41,19 @@ const SelectProductModal = ({ onClose, onSelect }) => {
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center' }}>
             <div className="search-bar" style={{ flex: 1, margin: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input id="imei-input-buyer-billing" placeholder="Search IMEI number..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && filtered.length > 0) { onSelect(filtered[0]); } }} autoFocus />
+              <input id="imei-input-buyer-billing" placeholder="Search IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { 
+                if (e.key === 'Enter') {
+                  const val = e.target.value.trim().toLowerCase();
+                  if (!val) return;
+                  const currentFiltered = products.filter(p => 
+                    (p.imeiNumber && p.imeiNumber.toLowerCase().includes(val)) ||
+                    (p.barcode && p.barcode.toLowerCase().includes(val))
+                  );
+                  if (currentFiltered.length > 0) { 
+                    onSelect(currentFiltered[0]); 
+                  }
+                } 
+              }} autoFocus />
             </div>
             <button type="button" onClick={() => document.getElementById('imei-input-buyer-billing').focus()} className="btn btn-outline" title="Scan barcode" style={{ flexShrink: 0, padding: '0 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', height: '40px' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

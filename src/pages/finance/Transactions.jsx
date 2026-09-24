@@ -42,7 +42,8 @@ const TRANSACTION_TYPE_CONFIG = {
   refund:            { label: 'Refund',            icon: '💰', cls: 'badge-danger' },
 }
 
-const INCOME_TYPES = new Set(['sale', 'customer_payment', 'loan_payment', 'receivable_payment', 'refund'])
+const INCOME_TYPES = new Set(['customer_payment', 'loan_payment', 'receivable_payment'])
+const NEUTRAL_TYPES = new Set(['sale', 'purchase']) // For display purposes, these are neither direct cash in nor out, though purchase is an outflow of stock/money and sale is inflow of revenue. We will handle their display in the component.
 
 const TransactionTypeBadge = ({ type }) => {
   const config = TRANSACTION_TYPE_CONFIG[type] || { label: String(type || 'Unknown').replace(/_/g, ' '), icon: '📋', cls: 'badge-warning' }
@@ -323,7 +324,7 @@ const Transactions = () => {
                           </div>
                         </td>
                         <td style={{ fontSize: '13px' }}>{t.paymentMethod || '—'}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 700, color: isPositive ? 'var(--success)' : 'var(--danger)' }}>
+                        <td style={{ textAlign: 'right', fontWeight: 700, color: INCOME_TYPES.has(t.transactionType) ? 'var(--success)' : (NEUTRAL_TYPES.has(t.transactionType) ? 'var(--text)' : 'var(--danger)') }}>
                           {formatCurrency(t.amount)}
                         </td>
                         <td style={{ fontSize: '13px', color: 'var(--text-muted)' }}>

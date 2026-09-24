@@ -30,7 +30,7 @@ const WholesaleHome = () => {
     try {
       setLoading(true);
       const [prodRes, sliderRes] = await Promise.all([
-        api.get('/products/public'),
+        api.get('/products/wholesale'),
         api.get('/sliders')
       ]);
       const sorted = (prodRes.data?.data || []).sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
