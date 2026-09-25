@@ -86,9 +86,13 @@ const SelectProductModal = ({ onClose, onSelect }) => {
 
 const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, onClose }) => {
   const [isSaving, setIsSaving] = useState(false)
-  const taxableValue = subtotal - discountAmt
-  const cgstAmt = gstAmt / 2
-  const sgstAmt = gstAmt / 2
+  const safeNum = (v) => (isNaN(v) || v == null ? 0 : Number(v));
+    const safeSubtotal = safeNum(subtotal);
+    const safeDiscount = safeNum(discountAmt);
+    const safeGst = billType === 'gst' ? safeNum(gstAmt) : 0;
+    const taxableValue = safeSubtotal - safeDiscount
+  const cgstAmt = safeGst / 2
+  const sgstAmt = safeGst / 2
   const finalInvoiceNo = existingInvoiceNo || 'Pending Save'
   const emiDayOnly = finance.emiPayDate ? new Date(finance.emiPayDate).getDate() : ''
   const emiMethodLabel = finance.emiPaymentMethod === 'bank' ? 'Auto bank deduction' : 'Will come to shop'
@@ -292,165 +296,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
           {/* ─── SINGLE PRINT AREA ─── */}
           <div id="print-area" className="printable-invoice" style={{ border: '2px solid #1e3a8a', padding: '16px', background: '#fff', fontSize: '12px', color: '#000', fontFamily: 'monospace' }}>
 
-            {billType === 'non-gst' ? (
-              /* NON-GST Invoice */
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '10px' }}>
-                  <div style={{ flex: 1 }}>
-                    <h1 style={{ fontSize: '36px', fontWeight: '900', margin: 0, textTransform: 'uppercase', letterSpacing: '1px', fontFamily: 'Arial, sans-serif' }}>VAISHNO MOBILE</h1>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold' }}>TAX INVOICE</div>
-                  </div>
-                  <div style={{ flex: 1, textAlign: 'right', fontSize: '18px' }}>
-                    <strong>ADDRESS:</strong><br/>
-                    <span style={{ fontSize: '22px' }}>JALESAR ROAD</span>
-                  </div>
-                </div>
-
-                <div style={{ border: '2px solid #000', borderRadius: '12px', padding: '16px', marginTop: '10px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                    <div style={{ lineHeight: '1.6', fontSize: '12px', fontWeight: 'bold' }}>
-                      <div style={{ marginBottom: '4px' }}>Invoice to :</div>
-                      <div style={{ display: 'flex' }}><span style={{ width: '60px' }}>M/s</span>: <span style={{ borderBottom: '1px solid #000', width: '220px', display: 'inline-block', paddingLeft: '8px' }}>{customer.name || 'Walk-in Customer'}</span></div>
-                      <div style={{ display: 'flex' }}><span style={{ width: '60px' }}>Address</span>: <span style={{ borderBottom: '1px solid #000', width: '220px', display: 'inline-block', paddingLeft: '8px' }}>{customer.address || ''}</span></div>
-                      <div style={{ display: 'flex' }}><span style={{ width: '60px' }}>Phone</span>: <span style={{ borderBottom: '1px solid #000', width: '220px', display: 'inline-block', paddingLeft: '8px' }}>{customer.mobile || ''}</span></div>
-                    </div>
-                    <div style={{ lineHeight: '1.6', fontSize: '12px' }}>
-                      <div style={{ display: 'flex' }}><span style={{ width: '100px' }}>Date</span>: <span>{new Date().toLocaleDateString('en-IN')}</span></div>
-                      <div style={{ display: 'flex' }}><span style={{ width: '100px' }}>Invoice No.</span>: <span>{finalInvoiceNo || 'Pending Save'}</span></div>
-                      <div style={{ display: 'flex' }}><span style={{ width: '100px' }}>Reverse charge</span>: <span></span></div>
-                    </div>
-                  </div>
-
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px' }}>
-                    <thead>
-                      <tr style={{ borderTop: '2px solid #000', borderBottom: '1px solid #000' }}>
-                        <th style={{ padding: '8px', textAlign: 'left' }}>Product Name</th>
-                        <th style={{ padding: '8px', textAlign: 'center' }}>Qty</th>
-                        <th style={{ padding: '8px', textAlign: 'center' }}>RATE</th>
-                        <th style={{ padding: '8px', textAlign: 'center' }}>AMOUNT</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {items.length === 0 ? (
-                        <tr><td colSpan="4" style={{ padding: '20px' }}></td></tr>
-                      ) : items.map(item => (
-                        <tr key={item.id}>
-                          <td style={{ padding: '8px 8px 30px 8px', borderBottom: '1px solid #000' }}>{item.product} {item.imei && item.imei !== '—' ? `(IMEI: ${item.imei})` : ''}</td>
-                          <td style={{ padding: '8px 8px 30px 8px', textAlign: 'center', borderBottom: '1px solid #000' }}>{item.qty}</td>
-                          <td style={{ padding: '8px 8px 30px 8px', textAlign: 'center', borderBottom: '1px solid #000' }}>{item.price.toLocaleString('en-IN')}</td>
-                          <td style={{ padding: '8px 8px 30px 8px', textAlign: 'center', borderBottom: '1px solid #000' }}>{(item.price * item.qty).toLocaleString('en-IN')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-
-                  {/* Totals */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px', flexDirection: 'column', alignItems: 'flex-end', gap: '8px' }}>
-                    {Number(warrantySaleAmount) > 0 && (
-                      <div style={{ display: 'flex', gap: '40px', alignItems: 'center', paddingRight: '20px' }}>
-                        <strong style={{ fontSize: '13px' }}>Warranty Sale</strong>
-                        <span style={{ width: '100px', textAlign: 'center', fontSize: '13px' }}>₹ {Number(warrantySaleAmount).toLocaleString('en-IN')}</span>
-                      </div>
-                    )}
-                    <div style={{ border: '2px solid #000', borderRadius: '8px', padding: '10px 20px', display: 'flex', gap: '40px', alignItems: 'center' }}>
-                      <strong style={{ fontSize: '14px' }}>Total Amount</strong>
-                      <span style={{ borderBottom: '1px solid #000', width: '100px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px' }}>{grandTotal.toLocaleString('en-IN')}</span>
-                    </div>
-                    {/* Payment info */}
-                    <div style={{ fontSize: '12px', color: '#444' }}>
-                      <strong>Payment:</strong> {payMode.includes('finance')
-                        ? `Finance (Down: ₹${Number(finance.downPayment || 0).toLocaleString('en-IN')} via ${downPaymentModeLabel || '—'})`
-                        : payMode.map(m => m.toUpperCase()).join(' + ')}
-                    </div>
-                  </div>
-
-                  {/* Warranty */}
-                  <div style={{ border: '1px solid #000', borderRadius: '6px', padding: '8px', marginBottom: '10px', fontSize: '10px' }}>
-                    <strong>WARRANTY OPTIONS: </strong>
-                    {warrantyOptions.length > 0 ? warrantyOptions.join(' | ') : 'None Selected'}
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', fontSize: '11px', lineHeight: '1.5' }}>
-                    <div>
-                      <strong>WARRANTY COVERED AS COMPANY RULES REGULATIONS</strong><br />
-                      <strong>For warranty go at care centre not Mobile Sales Centre</strong><br />
-                      <strong>E,&amp;O.E.</strong><br />
-                      1. Goods once sold will not be taken back.<br />
-                      2. All subject to FIROZABAD Jurisdiction
-                    </div>
-                    <div style={{ textAlign: 'center', fontWeight: 'bold' }}>Customer's Signature</div>
-                    <div style={{ textAlign: 'center', fontWeight: 'bold' }}>
-                      <div style={{ marginBottom: '15px' }}>For: Vaishno Mobile</div>
-                      <div>Auth. Sign</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Finance Slip (inline, same sheet) */}
-                {payMode.includes('finance') && (
-                  <div style={{ marginTop: '20px', borderTop: '2px dashed #000', paddingTop: '14px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <img src="/logo.png" alt="MVM" style={{ width: '28px', height: '28px', objectFit: 'contain' }} />
-                        <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '13px' }}>MAA VESHNO MOBILE</div>
-                          <div style={{ fontSize: '11px', border: '1px solid #000', padding: '1px 6px', letterSpacing: '2px', display: 'inline-block' }}>FINANCE SLIP</div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right', fontSize: '11px' }}>
-                        <div style={{ fontStyle: 'italic' }}>Rajeev Gupta</div>
-                        <div>+91-9837616333</div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px', fontSize: '11px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>FINANCE BY:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{financeType === 'company' ? finance.company : finance.privateFinancier}</span></div>
-                        {finance.loanId && <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>LOAN ID:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{finance.loanId}</span></div>}
-                        <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>CUSTOMER NAME:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{customer.name || '—'}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>MOBILE NAME:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{items[0]?.product || '—'}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>IMEI NO:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{items[0]?.imei || '—'}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>DOWN PAYMENT:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>₹{Number(finance.downPayment || 0).toLocaleString('en-IN')} ({downPaymentModeLabel || '—'})</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '120px', fontWeight: 'bold' }}>EMI METHOD:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{emiMethodLabel}</span></div>
-
-                        {/* Warranty box */}
-                        <div style={{ marginTop: '8px', border: '1px solid #000', padding: '6px', borderRadius: '4px', fontSize: '9px', lineHeight: '1.5' }}>
-                          <strong>1. WATER/पानी</strong><br />
-                          <strong>2. DAMAGE/टूट फूट</strong><br />
-                          {warrantyOptions.map(opt => (
-                            <div key={opt} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0' }}>
-                              <div style={{ width: '12px', height: '12px', border: '1px solid #000', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px' }}>✓</div>
-                              <span>{opt === 'No Guarantee' ? 'NO GUARANTEE / कोई गारंटी नहीं है' : opt === '1 Year Insurance' ? '1 YEAR INSURANCE / गारंटी है' : opt}</span>
-                            </div>
-                          ))}
-                          <div style={{ fontWeight: 'bold', marginTop: '4px' }}>[समय पर ना जमा करने पर 650 रूपये की पेनाल्टी]</div>
-                          <div style={{ fontWeight: 'bold' }}>650 RUPEES PENALTY WHEN NOT PAID ON TIME</div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>BILL DATE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{new Date().toLocaleDateString('en-IN')}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>BILL NO:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>{finalInvoiceNo || 'Pending Save'}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>₹ {finance.emi || '0'}.00</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>TENURE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{finance.tenure}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI DATE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{emiDayOnly ? `Every ${emiDayOnly}${emiDayOnly === 1 ? 'st' : emiDayOnly === 2 ? 'nd' : emiDayOnly === 3 ? 'rd' : 'th'} of month` : '—'}</span></div>
-                        {financeType === 'private' && (
-                          <div style={{ marginTop: '8px', textAlign: 'center' }}>
-                            <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(`${window.location.origin}/track-emi/${customer.mobile}`)}`} alt="QR" style={{ border: '1px solid #000', padding: '2px' }} />
-                            <div style={{ fontSize: '9px', marginTop: '2px', fontWeight: 'bold' }}>Scan for EMI Details</div>
-                          </div>
-                        )}
-                        <div style={{ marginTop: '8px', fontSize: '9px', textAlign: 'center', lineHeight: '1.3' }}>
-                          <strong>(NO GUARANTEE OF SNATCHING)</strong><br />
-                          <strong>(चोरी की कोई गारंटी नहीं है)</strong>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              /* GST Invoice */
+            
               <>
                 {/* Shop Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1.5px solid #1e3a8a', paddingBottom: '10px' }}>
@@ -462,7 +308,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
                     </h1>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '10px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    <div style={{ fontSize: '13px', border: '1.5px solid #1e3a8a', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' }}>TAX INVOICE</div>
+                    <div style={{ fontSize: '13px', border: '1.5px solid #1e3a8a', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' }}>{billType === 'gst' ? 'TAX INVOICE' : 'RETAIL INVOICE'}</div>
                     <div>MOB: +91-9837616333</div>
                     <div>Email: maaveshnomvm@gmail.com</div>
                     <div style={{ maxWidth: '240px', fontSize: '9px', marginTop: '2px' }}>ADDRESS: NEAR GOPAL SWEET HOUSE JALESAR ROAD FIROZABAD</div>
@@ -653,7 +499,6 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
                   </div>
                 )}
               </>
-            )}
           </div>
         </div>
       </div>
@@ -711,6 +556,7 @@ const CustomerBilling = () => {
           const sale = res.data.data;
           setExistingInvoiceNo(sale.invoiceNumber);
           setCustomerType(sale.saleType);
+          setBillType(sale.isGST ? 'gst' : 'non-gst');
           setPayMode([sale.paymentMode]);
           setCustomer({
             name: sale.customerName,
@@ -734,14 +580,7 @@ const CustomerBilling = () => {
             });
             setFinanceType(sale.financeDetails.loanId ? 'company' : 'private');
           }
-          setItems(sale.items.map(i => ({
-            productId: i.productId,
-            product: i.productName,
-            imei: i.imei,
-            qty: i.qty,
-            price: i.price,
-            total: i.total
-          })));
+          setItems(sale.items.map(i => ({ productId: i.productId, product: i.productName, imei: i.imei, qty: i.qty, price: i.price, discount: i.discount || 0, total: i.total })));
           setCustomDiscount(sale.totalDiscount || '');
           setCustomGrandTotal(sale.grandTotal || '');
         }
