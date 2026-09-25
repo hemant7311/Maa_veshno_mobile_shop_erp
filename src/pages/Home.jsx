@@ -3,15 +3,6 @@ import { Link, useNavigate } from 'react-router-dom'
 import PublicLayout from '../components/layout/PublicLayout'
 import api from '../services/api'
 
-const featuredDemoProducts = [
-  { _id: 'demo1', productName: 'iPhone 15 Pro Max', variant: '256GB', brand: 'Apple', salePrice: 159900, image: 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg' },
-  { _id: 'demo2', productName: 'Samsung Galaxy S24 Ultra', variant: '256GB', brand: 'Samsung', salePrice: 129999, image: 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg' },
-  { _id: 'demo3', productName: 'OnePlus 12R', variant: '256GB', brand: 'OnePlus', salePrice: 49999, image: 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg' },
-  { _id: 'demo4', productName: 'Xiaomi 14', variant: '256GB', brand: 'Xiaomi', salePrice: 69999, image: 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg' },
-  { _id: 'demo5', productName: 'Realme GT 6', variant: '256GB', brand: 'Realme', salePrice: 39999, image: 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg' },
-  { _id: 'demo6', productName: 'iQOO Neo 9 Pro', variant: '256GB', brand: 'iQOO', salePrice: 34999, image: 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg' }
-]
-
 const Home = () => {
   const navigate = useNavigate()
   const [products, setProducts] = useState([])
@@ -25,62 +16,46 @@ const Home = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      setLoading(true)
       try {
         const [prodRes, sliderRes] = await Promise.all([
           api.get('/products/public'),
           api.get('/sliders')
-        ]);
+        ])
         if (prodRes.data?.success) {
-            const sorted = prodRes.data.data.sort((a,b) => new Date(b.createdAt||0) - new Date(a.createdAt||0));
-            setProducts(sorted);
-          }
-        if (sliderRes.data?.success) setSliders(sliderRes.data.data);
+          const sorted = prodRes.data.data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+          setProducts(sorted)
+        }
+        if (sliderRes.data?.success) setSliders(sliderRes.data.data)
       } catch (err) {
-        console.error('Failed to load public data', err);
+        console.error('Failed to load public data', err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchData();
+    }
+    fetchData()
   }, [])
 
   useEffect(() => {
     if (sliders.length > 1) {
-      const timer = setInterval(() => setCurrentSlide(prev => (prev + 1) % sliders.length), 5000);
-      
-  const brands = ['All', ...new Set(products.map(p => p.brand).filter(Boolean))];
-  const categories = ['All', ...new Set(products.map(p => p.categoryName || p.categoryId?.categoryName).filter(Boolean))];
-  
-  const filteredProducts = products.filter(p => {
-    if (filterBrand !== 'All' && p.brand !== filterBrand) return false;
-    const pCat = p.categoryName || p.categoryId?.categoryName || 'Unknown';
-    if (filterCategory !== 'All' && pCat !== filterCategory) return false;
-    return true;
-  });
-
-  const itemsPerPage = 20;
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  return () => clearInterval(timer);
+      const timer = setInterval(() => setCurrentSlide(prev => (prev + 1) % sliders.length), 5000)
+      return () => clearInterval(timer)
     }
   }, [sliders.length])
 
+  const brands = ['All', ...new Set(products.map(p => p.brand).filter(Boolean))]
+  const categories = ['All', ...new Set(products.map(p => p.categoryName || p.categoryId?.categoryName).filter(Boolean))]
 
-  const brands = ['All', ...new Set(products.map(p => p.brand).filter(Boolean))];
-  const categories = ['All', ...new Set(products.map(p => p.categoryName || p.categoryId?.categoryName).filter(Boolean))];
-  
   const filteredProducts = products.filter(p => {
-    if (filterBrand !== 'All' && p.brand !== filterBrand) return false;
-    const pCat = p.categoryName || p.categoryId?.categoryName || 'Unknown';
-    if (filterCategory !== 'All' && pCat !== filterCategory) return false;
-    return true;
-  });
+    if (filterBrand !== 'All' && p.brand !== filterBrand) return false
+    const pCat = p.categoryName || p.categoryId?.categoryName || 'Unknown'
+    if (filterCategory !== 'All' && pCat !== filterCategory) return false
+    return true
+  })
 
-  const itemsPerPage = 20;
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
-  const currentProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const itemsPerPage = 20
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage)
+  const currentProducts = filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
     <PublicLayout>
@@ -125,9 +100,9 @@ const Home = () => {
         <section className="portal-hero-slider">
           <div className="portal-container hero-slider-flex">
             {sliders.map((slide, idx) => (
-              <div 
-                key={slide._id} 
-                style={{ 
+              <div
+                key={slide._id}
+                style={{
                   display: idx === currentSlide ? 'flex' : 'none',
                   width: '100%',
                   justifyContent: 'space-between',
@@ -167,12 +142,12 @@ const Home = () => {
               </div>
             ))}
           </div>
-          
+
           {sliders.length > 1 && (
             <div className="hero-slider-dots">
               {sliders.map((_, idx) => (
-                <span 
-                  key={idx} 
+                <span
+                  key={idx}
                   className={`dot ${idx === currentSlide ? 'active' : ''}`}
                   onClick={() => setCurrentSlide(idx)}
                   style={{ cursor: 'pointer' }}
@@ -237,14 +212,14 @@ const Home = () => {
           </div>
 
           <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-              <select className="form-select" value={filterBrand} onChange={e => { setFilterBrand(e.target.value); setCurrentPage(1); }}>
-                {brands.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
-              </select>
-              <select className="form-select" value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setCurrentPage(1); }}>
-                {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
-              </select>
-            </div>
-            <div className="featured-products-grid">
+            <select className="form-select" value={filterBrand} onChange={e => { setFilterBrand(e.target.value); setCurrentPage(1); }}>
+              {brands.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
+            </select>
+            <select className="form-select" value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setCurrentPage(1); }}>
+              {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+            </select>
+          </div>
+          <div className="featured-products-grid">
             {currentProducts.map(p => (
               <div className="portal-product-card" key={p._id} onClick={() => setSelectedProduct(p)}>
                 <div className="product-card-img-wrapper">
@@ -261,15 +236,6 @@ const Home = () => {
                   <span className="product-card-variant">{p.variant || '256GB'}</span>
                   <span className="product-card-price">₹{p.salePrice ? p.salePrice.toLocaleString('en-IN') : '0'}</span>
                   <div className="product-card-actions">
-                    <button
-                      className="product-card-add-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        alert(`${p.productName} added to cart!`);
-                      }}
-                    >
-                      Add to Cart
-                    </button>
                     <button className="product-card-view-btn" onClick={(e) => { e.stopPropagation(); setSelectedProduct(p) }}>
                       View
                     </button>

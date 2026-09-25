@@ -3,19 +3,6 @@ import { useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/layout/PublicLayout'
 import api from '../services/api'
 
-const demoCatalogProducts = [
-  { _id: 'demo1', productName: 'iPhone 15 Pro Max', variant: '256GB', brand: 'Apple', salePrice: 159900, category: 'Smartphones', image: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ3Af_eWd1ZOIAmWOuJPZUCl50vDJ2PwefRItK9hQpJdh0Hs-dwE8qOCqvMAgZjFR5T6jhamb0Jq2G8D33dXi3eiQ_kArh86Wp1wXPxQFmsyA7E0Xee6ro' },
-  { _id: 'demo2', productName: 'Samsung Galaxy S24 Ultra', variant: '256GB', brand: 'Samsung', salePrice: 129999, category: 'Smartphones', image: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ3Af_eWd1ZOIAmWOuJPZUCl50vDJ2PwefRItK9hQpJdh0Hs-dwE8qOCqvMAgZjFR5T6jhamb0Jq2G8D33dXi3eiQ_kArh86Wp1wXPxQFmsyA7E0Xee6ro' },
-  { _id: 'demo3', productName: 'OnePlus 12R', variant: '256GB', brand: 'OnePlus', salePrice: 49999, category: 'Smartphones', image: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ3Af_eWd1ZOIAmWOuJPZUCl50vDJ2PwefRItK9hQpJdh0Hs-dwE8qOCqvMAgZjFR5T6jhamb0Jq2G8D33dXi3eiQ_kArh86Wp1wXPxQFmsyA7E0Xee6ro' },
-  { _id: 'demo4', productName: 'Xiaomi 14', variant: '256GB', brand: 'Xiaomi', salePrice: 69999, category: 'Smartphones', image: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ3Af_eWd1ZOIAmWOuJPZUCl50vDJ2PwefRItK9hQpJdh0Hs-dwE8qOCqvMAgZjFR5T6jhamb0Jq2G8D33dXi3eiQ_kArh86Wp1wXPxQFmsyA7E0Xee6ro' },
-  { _id: 'demo5', productName: 'Realme GT 6', variant: '256GB', brand: 'Realme', salePrice: 39999, category: 'Smartphones', image: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ3Af_eWd1ZOIAmWOuJPZUCl50vDJ2PwefRItK9hQpJdh0Hs-dwE8qOCqvMAgZjFR5T6jhamb0Jq2G8D33dXi3eiQ_kArh86Wp1wXPxQFmsyA7E0Xee6ro' },
-  { _id: 'demo6', productName: 'iQOO Neo 9 Pro', variant: '256GB', brand: 'iQOO', salePrice: 34999, category: 'Smartphones', image: 'https://encrypted-tbn3.gstatic.com/shopping?q=tbn:ANd9GcQ3Af_eWd1ZOIAmWOuJPZUCl50vDJ2PwefRItK9hQpJdh0Hs-dwE8qOCqvMAgZjFR5T6jhamb0Jq2G8D33dXi3eiQ_kArh86Wp1wXPxQFmsyA7E0Xee6ro' },
-  { _id: 'demo7', productName: 'Fast Charging Charger 30W', variant: 'Dual Port', brand: 'Apple', salePrice: 1999, category: 'Chargers', image: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=400&q=80' },
-  { _id: 'demo8', productName: 'Wireless Charging Pad', variant: '15W Fast', brand: 'Samsung', salePrice: 3499, category: 'Chargers', image: 'https://images.unsplash.com/photo-1622445262465-2481c4574875?auto=format&fit=crop&w=400&q=80' },
-  { _id: 'demo9', productName: 'Premium Glass Protector', variant: 'Gorilla Fit', brand: 'Accessories', salePrice: 499, category: 'Accessories', image: 'https://images.unsplash.com/photo-1605152276897-4f618f83196b?auto=format&fit=crop&w=400&q=80' },
-  { _id: 'demo10', productName: 'Silicone Matte Cover case', variant: 'iPhone 15 Pro Max', brand: 'Accessories', salePrice: 999, category: 'Accessories', image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=400&q=80' }
-]
-
 const AllProductsList = () => {
   const [searchParams] = useSearchParams()
   const initialBrand = searchParams.get('brand') || ''
@@ -35,17 +22,17 @@ const AllProductsList = () => {
   useEffect(() => {
     const fetchPublicProducts = async () => {
       try {
-        const res = await api.get('/products/public');
+        const res = await api.get('/products/public')
         if (res.data?.success) {
-          setProducts(res.data.data);
+          setProducts(res.data.data)
         }
       } catch (err) {
-        console.error('Failed to load public products', err);
+        console.error('Failed to load public products', err)
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-    fetchPublicProducts();
+    }
+    fetchPublicProducts()
   }, [])
 
   // Sync state with url params changes
@@ -160,9 +147,6 @@ const AllProductsList = () => {
                       <span className="product-card-variant">{p.variant || '256GB'}</span>
                       <span className="product-card-price">₹{p.salePrice ? p.salePrice.toLocaleString('en-IN') : '0'}</span>
                       <div className="product-card-actions">
-                        <button className="product-card-add-btn" onClick={(e) => { e.stopPropagation(); alert(`${p.productName} added to cart!`) }}>
-                          Add to Cart
-                        </button>
                         <button className="product-card-view-btn" onClick={(e) => { e.stopPropagation(); setSelectedProduct(p) }}>
                           View
                         </button>

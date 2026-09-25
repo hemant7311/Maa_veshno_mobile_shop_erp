@@ -4,13 +4,6 @@ import { Link, useNavigate } from 'react-router-dom'
 const PublicLayout = ({ children, initialSearch = '' }) => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState(initialSearch)
-  const [cartCount, setCartCount] = useState(0)
-  const [toastMessage, setToastMessage] = useState('')
-
-  const showToast = (msg) => {
-    setToastMessage(msg)
-    setTimeout(() => setToastMessage(''), 3000)
-  }
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -21,21 +14,6 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
 
   return (
     <div className="home-portal-wrapper">
-      {/* Toast Alert */}
-      {toastMessage && <div className="portal-toast">{toastMessage}</div>}
-
-      {/* Top Welcome Bar */}
-      <div className="portal-top-bar">
-        <div className="portal-container top-bar-flex">
-          <span className="top-bar-welcome">Welcome to Maa Veshno Mobile</span>
-          <div className="top-bar-links">
-            <Link to="/about">About Us</Link>
-            <Link to="/contact">Contact Us</Link>
-            <a href="#support" onClick={(e) => { e.preventDefault(); alert('Support helpline: +91 98765 43210') }}>Support</a>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className="portal-header">
         <div className="portal-container header-flex">
@@ -95,14 +73,6 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
             <Link to="/all-products?category=Chargers">Mobile Chargers</Link>
             <Link to="/all-products">Other Devices</Link>
           </div>
-          <div className="nav-right-actions">
-            <span className="nav-action-item">🔄 Compare</span>
-            <span className="nav-action-item">❤️ Wishlist</span>
-            <div className="nav-cart-wrapper" onClick={() => showToast(`Your cart contains ${cartCount} items.`)}>
-              🛒 Cart
-              <span className="cart-badge-count">{cartCount}</span>
-            </div>
-          </div>
         </div>
       </nav>
 
@@ -110,47 +80,6 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
       <main className="portal-main-content">
         {children}
       </main>
-
-      {/* Trust Badges Bar */}
-      <section className="portal-trust-badges">
-        <div className="portal-container badges-flex">
-          <div className="trust-badge-item">
-            <span className="badge-icon">🛡️</span>
-            <div className="badge-text-box">
-              <span className="badge-title">100% Original Products</span>
-              <span className="badge-desc">Brand Warranty</span>
-            </div>
-          </div>
-          <div className="trust-badge-item">
-            <span className="badge-icon">💳</span>
-            <div className="badge-text-box">
-              <span className="badge-title">Secure Payments</span>
-              <span className="badge-desc">100% Secure Payment</span>
-            </div>
-          </div>
-          <div className="trust-badge-item">
-            <span className="badge-icon">🔄</span>
-            <div className="badge-text-box">
-              <span className="badge-title">Easy Returns</span>
-              <span className="badge-desc">7 Days Return Policy</span>
-            </div>
-          </div>
-          <div className="trust-badge-item">
-            <span className="badge-icon">🚚</span>
-            <div className="badge-text-box">
-              <span className="badge-title">Fast Delivery</span>
-              <span className="badge-desc">Quick & Safe Delivery</span>
-            </div>
-          </div>
-          <div className="trust-badge-item">
-            <span className="badge-icon">📞</span>
-            <div className="badge-text-box">
-              <span className="badge-title">Support 24/7</span>
-              <span className="badge-desc">We are Always Here</span>
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Footer Area */}
       <footer className="portal-footer">
@@ -180,8 +109,6 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
               <li><a href="#shipping" onClick={e => { e.preventDefault(); alert('Standard free shipping across India within 3-5 business days.') }}>Shipping Policy</a></li>
             </ul>
           </div>
-
-
 
           {/* Follow Us */}
           <div className="footer-col">
