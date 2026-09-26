@@ -86,10 +86,10 @@ const WholesaleHome = () => {
     setCurrentPage(1)
   }, [search, selectedBrand, selectedCategory])
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage))
+  const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage)), [filteredProducts])
   
   // Ensure currentPage does not exceed totalPages
-  const validCurrentPage = Math.min(currentPage, totalPages)
+  const validCurrentPage = useMemo(() => Math.min(currentPage, totalPages), [currentPage, totalPages])
 
   const paginatedProducts = useMemo(() => {
     const startIdx = (validCurrentPage - 1) * itemsPerPage
@@ -258,7 +258,7 @@ const WholesaleHome = () => {
         ) : (
           <div className="ws-grid">
             {paginatedProducts.map(p => {
-              const currentStock = p.stock !== undefined ? p.stock : (p.quantity !== undefined ? p.quantity : 0)
+              const currentStock = p.stock !== undefined ? p.stock : 0
               const isInStock = currentStock > 0
 
               return (
