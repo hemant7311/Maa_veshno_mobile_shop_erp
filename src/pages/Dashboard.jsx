@@ -87,9 +87,9 @@ const Dashboard = () => {
   const computedTotalItems = todaySalesArr.length
   const computedProductsSold = todaySalesArr.length
   
-  const computedProfit = dashboardData.todayProfit
-  const todayCashProfit = dashboardData.todayCashProfit || (todaySalesArr.filter(p => p.mode === 'cash').reduce((sum, p) => sum + (p.amount || 0), 0) - computedExpense)
-  const todayUpiProfit = dashboardData.todayUpiProfit || todaySalesArr.filter(p => p.mode !== 'cash').reduce((sum, p) => sum + (p.amount || 0), 0)
+  const computedProfit = dashboardData.todayProfit !== undefined ? dashboardData.todayProfit : 0
+  const todayCashProfit = dashboardData.todayCashProfit !== undefined ? dashboardData.todayCashProfit : 0
+  const todayUpiProfit = dashboardData.todayUpiProfit !== undefined ? dashboardData.todayUpiProfit : 0
 
   const todayStockInArr = allImeis.filter(item => item.createdAt && item.createdAt.startsWith(selectedDate))
   const computedStockIn = todayStockInArr.length > 0 ? todayStockInArr.length : (allImeis.length > 0 ? 0 : dashboardData.todayStockIn)
