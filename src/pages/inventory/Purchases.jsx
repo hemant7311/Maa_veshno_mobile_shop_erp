@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { getAllPurchases, createPurchase, getAllSuppliers, getAllProducts } from '../../services/api'
+import { subscribeSuppliersChanged } from '../../utils/supplierEvents'
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([])
@@ -35,6 +36,12 @@ const Purchases = () => {
 
   useEffect(() => {
     loadData()
+    const unsubscribe = subscribeSuppliersChanged(() => {
+      getAllSuppliers().then(res => {
+        if (res.data?.success) setSuppliers(res.data.data)
+      }).catch(console.error)
+    })
+    return unsubscribe
   }, [])
 
   const loadData = async () => {
