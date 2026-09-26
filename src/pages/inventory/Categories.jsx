@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
 
-/* ── Add Category Modal ── */
-const AddCategoryModal = ({ onClose, onSave }) => {
-  const [form, setForm] = useState({ categoryName: '', description: '', status: 'active' })
+/* ── Add / Edit Category Modal ── */
+const CategoryModal = ({ categoryToEdit, onClose, onSave }) => {
+  const isEdit = Boolean(categoryToEdit)
+  const [form, setForm] = useState({
+    categoryName: categoryToEdit?.categoryName || categoryToEdit?.folderName || '',
+    description: categoryToEdit?.description || '',
+    status: categoryToEdit?.status || 'active'
+  })
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -19,17 +24,27 @@ const AddCategoryModal = ({ onClose, onSave }) => {
     try {
       setSaving(true)
       setError('')
-      const response = await api.post('/categories', {
-        categoryName: form.categoryName.trim(),
-        description: form.description.trim(),
-        status: form.status
-      })
+      let response
+      if (isEdit) {
+        response = await api.put(`/categories/${categoryToEdit._id}`, {
+          categoryName: form.categoryName.trim(),
+          description: form.description.trim(),
+          status: form.status
+        })
+      } else {
+        response = await api.post('/categories', {
+          categoryName: form.categoryName.trim(),
+          description: form.description.trim(),
+          status: form.status
+        })
+      }
+
       if (response.data.success) {
         onSave(response.data.data)
         onClose()
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Could not save category.')
+      setError(err.response?.data?.message || `Could not ${isEdit ? 'update' : 'save'} category.`)
     } finally {
       setSaving(false)
     }
@@ -40,8 +55,10 @@ const AddCategoryModal = ({ onClose, onSave }) => {
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
         <div className="modal-header">
           <div>
-            <h2 className="modal-title">Add Category</h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>Create a new category for products</p>
+            <h2 className="modal-title">{isEdit ? 'Edit Category' : 'Add Category'}</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              {isEdit ? 'Update existing category details' : 'Create a new category for products'}
+            </p>
           </div>
           <button className="modal-close" onClick={onClose}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -78,7 +95,7 @@ const AddCategoryModal = ({ onClose, onSave }) => {
           <div className="modal-footer">
             <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={saving}>
-              {saving ? 'Saving...' : 'Save Category'}
+              {saving ? 'Saving...' : isEdit ? 'Update Category' : 'Save Category'}
             </button>
           </div>
         </form>
@@ -94,6 +111,7 @@ const Categories = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showModal, setShowModal] = useState(false)
+  const [editingCategory, setEditingCategory] = useState(null)
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -110,8 +128,8 @@ const Categories = () => {
     loadCategories()
   }, [])
 
-  const handleAddCategory = (newCategory) => {
-    setCategories(current => [...current, { ...newCategory, productCount: 0, stock: 0 }].sort((a, b) => a.categoryName.localeCompare(b.categoryName)))
+  const handleSaveCategory = () => {
+    loadCategories()
   }
 
   const handleDeleteCategory = async (id, name) => {
@@ -160,7 +178,6 @@ const Categories = () => {
       buttons.push(<span key="dots-left" style={{ display: 'flex', alignItems: 'center', padding: '0 8px', color: 'var(--text-muted)' }}>...</span>)
     }
 
-    // Show pages around current page
     for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) {
       buttons.push(
         <button key={i} className={`pagination-btn${currentPage === i ? ' active' : ''}`} onClick={() => handlePageChange(i)}>
@@ -173,7 +190,6 @@ const Categories = () => {
       buttons.push(<span key="dots-right" style={{ display: 'flex', alignItems: 'center', padding: '0 8px', color: 'var(--text-muted)' }}>...</span>)
     }
 
-    // Always show last page if it's not page 1
     if (totalPages > 1) {
       buttons.push(
         <button key={totalPages} className={`pagination-btn${currentPage === totalPages ? ' active' : ''}`} onClick={() => handlePageChange(totalPages)}>
@@ -194,15 +210,21 @@ const Categories = () => {
 
   return (
     <div>
-      {showModal && <AddCategoryModal onClose={() => setShowModal(false)} onSave={handleAddCategory} />}
+      {showModal && (
+        <CategoryModal
+          categoryToEdit={editingCategory}
+          onClose={() => { setShowModal(false); setEditingCategory(null) }}
+          onSave={handleSaveCategory}
+        />
+      )}
 
       <div className="page-header">
         <div className="page-header-left">
           <h1>Categories</h1>
-          <p>Product stock is calculated from available IMEIs.</p>
+          <p>Manage product categories</p>
         </div>
         <div className="page-header-right">
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <button className="btn btn-primary" onClick={() => { setEditingCategory(null); setShowModal(true) }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
@@ -232,7 +254,7 @@ const Categories = () => {
                 <th style={{ width: '60px', padding: '8px 12px' }}>#</th>
                 <th style={{ padding: '8px 12px' }}>Category Name</th>
                 <th style={{ width: '120px', padding: '8px 12px' }}>Stock</th>
-                <th style={{ width: '80px', padding: '8px 12px', textAlign: 'center' }}>Action</th>
+                <th style={{ width: '120px', padding: '8px 12px', textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -254,8 +276,18 @@ const Categories = () => {
                   </td>
                   <td style={{ fontWeight: 700, color: 'var(--success)', padding: '8px 12px' }}>{category.stock || 0}</td>
                   <td style={{ padding: '8px 12px', textAlign: 'center' }}>
-                    <div className="action-btns" style={{ justifyContent: 'center' }}>
-                      <button className="action-btn danger" title="Delete" onClick={() => handleDeleteCategory(category._id, category.categoryName)}>
+                    <div className="action-btns" style={{ justifyContent: 'center', gap: '6px' }}>
+                      <button
+                        className="action-btn"
+                        title="Edit"
+                        onClick={() => { setEditingCategory(category); setShowModal(true) }}
+                        style={{ color: 'var(--primary)' }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+                      <button className="action-btn danger" title="Delete" onClick={() => handleDeleteCategory(category._id, category.categoryName || category.folderName)}>
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="3 6 5 6 21 6"/>
                           <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>

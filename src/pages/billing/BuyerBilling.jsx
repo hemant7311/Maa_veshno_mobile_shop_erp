@@ -13,54 +13,34 @@ const SelectProductModal = ({ onClose, onSelect }) => {
     setLoading(true)
     api.get('/products')
       .then((response) => setProducts(response.data.data || []))
-      .catch(() => setError('Products load nahi ho sake.'))
+      .catch(() => setError('Products could not be loaded.'))
       .finally(() => setLoading(false))
   }, [])
 
   const filtered = products.filter(p =>
+    (p.productName && p.productName.toLowerCase().includes(search.toLowerCase())) ||
+    (p.brand && p.brand.toLowerCase().includes(search.toLowerCase())) ||
     (p.imeiNumber && p.imeiNumber.toLowerCase().includes(search.toLowerCase())) ||
     (p.barcode && p.barcode.toLowerCase().includes(search.toLowerCase()))
   )
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px' }}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px' }}>
         <div className="modal-header" style={{ padding: '16px 20px' }}>
           <div>
-            <h2 className="modal-title" style={{ fontSize: '15px' }}>Select Product</h2>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Choose product to add to bill (by IMEI or Barcode)</p>
+            <h2 className="modal-title" style={{ fontSize: '15px' }}>Select Product for Wholesale</h2>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Choose product to add to wholesale bill</p>
           </div>
-          <button className="modal-close" onClick={onClose}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-          </button>
+          <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
         <div className="modal-body" style={{ padding: '16px 20px', maxHeight: '380px' }}>
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center' }}>
             <div className="search-bar" style={{ flex: 1, margin: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input id="imei-input-buyer-billing" placeholder="Search IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { 
-                if (e.key === 'Enter') {
-                  const val = e.target.value.trim().toLowerCase();
-                  if (!val) return;
-                  const currentFiltered = products.filter(p => 
-                    (p.imeiNumber && p.imeiNumber.toLowerCase().includes(val)) ||
-                    (p.barcode && p.barcode.toLowerCase().includes(val))
-                  );
-                  if (currentFiltered.length > 0) { 
-                    onSelect(currentFiltered[0]); 
-                  }
-                } 
-              }} autoFocus />
+              <input id="imei-input-buyer-billing" placeholder="Search product name, IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} autoFocus />
             </div>
-            <button type="button" onClick={() => document.getElementById('imei-input-buyer-billing').focus()} className="btn btn-outline" title="Scan barcode" style={{ flexShrink: 0, padding: '0 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', height: '40px' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 5v14M7 5v14M13 5v14M17 5v14M21 5v14M10 5v6M10 13v6"/>
-              </svg>
-              Scan
-            </button>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '280px', paddingRight: '4px' }}>
@@ -72,7 +52,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
               <p style={{ textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)', padding: '10px' }}>No products found</p>
             ) : filtered.map(p => (
               <div key={p._id} onClick={() => onSelect(p)}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', transition: 'var(--transition)' }}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}
                 onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'}
                 onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}>
                 <div>
@@ -80,7 +60,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{p.brand} · {p.variant || 'Standard'}</div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>₹{p.salePrice.toLocaleString('en-IN')}</div>
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>₹{(p.wholesalePrice || p.salePrice || 0).toLocaleString('en-IN')}</div>
                   <div style={{ fontSize: '10px', color: p.stock > 0 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>Stock: {p.stock}</div>
                 </div>
               </div>
@@ -93,11 +73,11 @@ const SelectProductModal = ({ onClose, onSelect }) => {
 }
 
 /* ── Wholesale Invoice Print Preview Modal ── */
-const PrintPreviewModal = ({ form, items, onClose }) => {
-  const total = items.reduce((sum, i) => sum + i.rate * i.qty, 0)
-  const invoiceNo = React.useMemo(() => 'MVM-WS-' + (Math.floor(Math.random() * 8999) + 1000), []);
+const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, form, items, total, onClose }) => {
+  const [isSaving, setIsSaving] = useState(false)
+  const displayInvoiceNo = existingInvoiceNo || 'Pending Save'
 
-  const handlePrint = async () => {
+  const handleSave = async (shouldPrint) => {
     if (items.length === 0) {
       alert('Please add at least one product before generating a bill.')
       return
@@ -108,21 +88,23 @@ const PrintPreviewModal = ({ form, items, onClose }) => {
     }
 
     try {
+      setIsSaving(true)
       const salePayload = {
-        invoiceNumber: invoiceNo,
+        invoiceNumber: existingInvoiceNo || undefined,
         customerName: form.shopName,
         phone: form.mobileNo,
         saleType: 'wholesale',
         paymentMode: 'cash',
         pickedBy: form.pickedBy,
+        partyGst: form.partyGst || '',
         subTotal: total,
-        totalDiscount: 0, // Implement if needed
-        totalTax: 0, // Implement if needed
+        totalDiscount: 0,
+        totalTax: 0,
         grandTotal: total,
         items: items.map(i => ({
           productId: i.productId || null, 
           productName: i.product,
-          imei: i.imeis ? i.imeis.join(', ') : '',
+          imei: i.imei || '',
           qty: i.qty,
           price: i.rate,
           discount: 0,
@@ -131,83 +113,42 @@ const PrintPreviewModal = ({ form, items, onClose }) => {
         }))
       }
       
-      // We assume `api` is imported, but let's make sure it doesn't crash if it's not
-      // Actually we need to make sure api is imported at the top of BuyerBilling.jsx
-      await window.api.post('/sales', salePayload).catch(async () => {
-         // Fallback if window.api is not defined
-         const { default: api } = await import('../../services/api')
-         await api.post('/sales', salePayload)
-      })
+      let res
+      if (editingSaleId) {
+        res = await api.put(`/sales/${editingSaleId}`, salePayload)
+      } else {
+        res = await api.post('/sales', salePayload)
+      }
 
-      window.print()
+      setIsSaving(false)
+      
+      if (shouldPrint) {
+        setTimeout(() => window.print(), 300)
+      } else {
+        alert('Wholesale bill saved successfully!')
+        onClose()
+        window.location.href = '/billing/buyer'
+      }
     } catch (error) {
+      setIsSaving(false)
       console.error('Failed to save wholesale bill', error)
       alert('Failed to save wholesale bill: ' + (error.response?.data?.message || error.message))
     }
   }
 
-  const handleShareWhatsApp = async () => {
-    if (!form.mobileNo) return alert('No mobile number provided.');
-    
-    // Open chat without pre-filled text
-    const url = `https://wa.me/91${form.mobileNo.replace(/\D/g, '')}`;
-    
-    try {
-      const printArea = document.getElementById('print-area');
-      if (printArea) {
-        // Temporarily scroll to top to prevent html2canvas from cutting off the image
-        const modalOverlay = document.querySelector('.modal-overlay');
-        const prevScroll = modalOverlay ? modalOverlay.scrollTop : 0;
-        if (modalOverlay) modalOverlay.scrollTop = 0;
-
-        const canvas = await html2canvas(printArea, { 
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
-
-        // Restore scroll
-        if (modalOverlay) modalOverlay.scrollTop = prevScroll;
-
-        canvas.toBlob(blob => {
-          navigator.clipboard.write([
-            new ClipboardItem({ 'image/png': blob })
-          ]).then(() => {
-            // Open WhatsApp Web immediately, image is in clipboard ready to paste
-            window.open(url, '_blank');
-          }).catch(err => {
-            console.error('Clipboard write failed, downloading instead:', err);
-            const link = document.createElement('a');
-            link.download = `Bill_${invoiceNo}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-            window.open(url, '_blank');
-          });
-        });
-      } else {
-        window.open(url, '_blank');
-      }
-    } catch (error) {
-      console.error('Failed to capture bill image', error);
-      window.open(url, '_blank');
-    }
-  }
-
   return (
     <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(0,0,0,0.6)', overflowY: 'auto' }}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', margin: '40px auto', background: 'var(--white)' }}>
-        <div className="modal-header">
-          <h2 className="modal-title">Wholesale Invoice Print Preview</h2>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', margin: '40px auto', background: 'var(--white)', display: 'flex', flexDirection: 'column' }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
+          <h2 className="modal-title">Wholesale Invoice Preview</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-outline" style={{ borderColor: '#25D366', color: '#25D366' }} onClick={handleShareWhatsApp}>
-              WhatsApp
-            </button>
-            <button className="btn btn-primary" onClick={handlePrint}>🖨️ Print Invoice</button>
+            <button className="btn btn-success" onClick={() => handleSave(false)} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Bill'}</button>
+            <button className="btn btn-primary" onClick={() => handleSave(true)} disabled={isSaving}>{isSaving ? 'Saving...' : '🖨️ Save & Print'}</button>
             <button className="btn btn-outline" onClick={onClose}>Close</button>
           </div>
         </div>
 
-        <div className="modal-body" style={{ padding: '24px' }}>
+        <div className="modal-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px' }}>
           {/* Printable Container */}
           <div id="print-area" className="printable-invoice" style={{ border: '2.5px solid #1e3a8a', padding: '24px', background: '#fff', fontSize: '12px', color: '#000', fontFamily: 'sans-serif', position: 'relative' }}>
             
@@ -226,12 +167,12 @@ const PrintPreviewModal = ({ form, items, onClose }) => {
                 </div>
               </div>
               <div style={{ textAlign: 'right', fontSize: '11px' }}>
-                <div style={{ margin: '3px 0' }}><strong>Invoice No.:</strong> <span style={{ borderBottom: '1px solid #000', paddingRight: '15px' }}>{invoiceNo}</span></div>
+                <div style={{ margin: '3px 0' }}><strong>Invoice No.:</strong> <span style={{ borderBottom: '1px solid #000', paddingRight: '15px' }}>{displayInvoiceNo}</span></div>
                 <div style={{ margin: '3px 0' }}><strong>Date:</strong> <span style={{ borderBottom: '1px solid #000', paddingRight: '15px' }}>{new Date().toLocaleDateString('en-IN')}</span></div>
               </div>
             </div>
 
-            {/* Buyer Details Card/Section */}
+            {/* Buyer Details */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px', fontSize: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <span style={{ width: '90px', fontWeight: 'bold' }}>Shop Name</span>
@@ -310,9 +251,40 @@ const PrintPreviewModal = ({ form, items, onClose }) => {
 /* ── Wholesale Buyer Billing Page ── */
 const BuyerBilling = () => {
   const [items, setItems] = useState([])
-  const [form, setForm] = useState({ shopName: '', pickedBy: '', mobileNo: '' })
+  const [form, setForm] = useState({ shopName: '', pickedBy: '', mobileNo: '', partyGst: '' })
   const [showSelectModal, setShowSelectModal] = useState(false)
   const [showPrintModal, setShowPrintModal] = useState(false)
+  const [editingSaleId, setEditingSaleId] = useState(null)
+  const [existingInvoiceNo, setExistingInvoiceNo] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const editId = params.get('edit')
+    if (editId) {
+      setEditingSaleId(editId)
+      api.get(`/sales/${editId}`).then(res => {
+        if (res.data?.success) {
+          const sale = res.data.data
+          setExistingInvoiceNo(sale.invoiceNumber)
+          setForm({
+            shopName: sale.customerName || '',
+            pickedBy: sale.pickedBy || '',
+            mobileNo: sale.phone || '',
+            partyGst: sale.partyGst || ''
+          })
+          setItems(sale.items.map((i, idx) => ({
+            id: Date.now() + idx,
+            productId: i.productId,
+            product: i.productName,
+            variant: i.variant || 'Standard',
+            imei: i.imei || '',
+            qty: i.qty,
+            rate: i.price
+          })))
+        }
+      }).catch(err => alert("Failed to load wholesale bill for editing: " + err.message))
+    }
+  }, [])
 
   const total = items.reduce((sum, i) => sum + i.rate * i.qty, 0)
 
@@ -322,11 +294,11 @@ const BuyerBilling = () => {
     const newItem = {
       id: Date.now(),
       productId: product._id,
-      imei: product.imeiNumber || 'N/A',
+      imei: product.imeiNumber || '',
       product: product.productName,
       variant: product.variant || 'Standard',
       qty: 1,
-      rate: product.salePrice
+      rate: product.wholesalePrice || product.salePrice || 0
     }
     setItems(current => [...current, newItem])
     setShowSelectModal(false)
@@ -339,16 +311,19 @@ const BuyerBilling = () => {
       {showSelectModal && <SelectProductModal onClose={() => setShowSelectModal(false)} onSelect={handleSelectProduct} />}
       {showPrintModal && (
         <PrintPreviewModal
+          editingSaleId={editingSaleId}
+          existingInvoiceNo={existingInvoiceNo}
           form={form}
           items={items}
+          total={total}
           onClose={() => setShowPrintModal(false)}
         />
       )}
 
       <div className="page-header">
         <div className="page-header-left">
-          <h1>Buyer Billing</h1>
-          <p>Create wholesale invoices for buyers</p>
+          <h1>{editingSaleId ? 'Edit Wholesale Bill' : 'Buyer Billing'}</h1>
+          <p>{editingSaleId ? `Editing Invoice #${existingInvoiceNo}` : 'Create wholesale invoices for buyers'}</p>
         </div>
         <div className="page-header-right">
           <button className="btn btn-outline" onClick={() => setShowPrintModal(true)}>🖨 Print Bill</button>
@@ -357,7 +332,7 @@ const BuyerBilling = () => {
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
               <polyline points="14 2 14 8 20 8"/>
             </svg>
-            Generate Invoice
+            {editingSaleId ? 'Save Edits' : 'Generate Invoice'}
           </button>
         </div>
       </div>
@@ -391,7 +366,7 @@ const BuyerBilling = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div className="form-group">
                 <label className="form-label">Invoice No.</label>
-                <input className="form-input" value="MVM-WS-001" readOnly style={{ background: 'var(--bg)' }} />
+                <input className="form-input" value={existingInvoiceNo || 'Auto-generated'} readOnly style={{ background: 'var(--bg)' }} />
               </div>
               <div className="form-group">
                 <label className="form-label">Date</label>
@@ -468,26 +443,12 @@ const BuyerBilling = () => {
               <span style={{ color: 'var(--text-secondary)' }}>Sub Total</span>
               <span>₹ {total.toLocaleString('en-IN')}</span>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '13px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>Discount</span>
-              <span>₹ 0</span>
-            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0', fontWeight: 700, fontSize: '15px' }}>
               <span>Total (₹)</span>
               <span style={{ color: 'var(--primary)' }}>₹ {total.toLocaleString('en-IN')}</span>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Footer note */}
-      <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '14px 18px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-        <strong style={{ color: 'var(--text-primary)' }}>Terms &amp; Conditions:</strong>
-        <ul style={{ marginTop: '6px', paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <li>Goods once sold will not be taken back.</li>
-          <li>All subject to Firozabad Jurisdiction.</li>
-          <li>Thank you for your business!</li>
-        </ul>
       </div>
     </div>
   )

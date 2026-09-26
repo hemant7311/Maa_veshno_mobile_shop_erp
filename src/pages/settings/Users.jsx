@@ -16,7 +16,7 @@ const AVAILABLE_PERMISSIONS = [
 const UserModal = ({ initialData, onClose, onSuccess }) => {
   const isEdit = !!initialData
   const [form, setForm] = useState(
-    initialData || { name: '', username: '', password: '', role: 'finance_agent', permissions: [] }
+    initialData || { name: '', username: '', password: '', role: 'staff', permissions: [] }
   )
   const [loading, setLoading] = useState(false)
 
@@ -39,15 +39,15 @@ const UserModal = ({ initialData, onClose, onSuccess }) => {
     try {
       if (isEdit) {
         await api.put(`/auth/users/${initialData._id}`, form)
-        alert('Staff updated successfully!')
+        alert('User updated successfully!')
       } else {
         await api.post('/auth/register', form)
-        alert('Staff created successfully!')
+        alert('User created successfully!')
       }
       onSuccess()
     } catch (error) {
       console.error(error)
-      alert(error.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} staff`)
+      alert(error.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} user`)
     } finally {
       setLoading(false)
     }
@@ -55,21 +55,21 @@ const UserModal = ({ initialData, onClose, onSuccess }) => {
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-        <div className="modal-header">
-          <h2 className="modal-title">{isEdit ? 'Edit Staff' : 'Add New Staff'}</h2>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '440px', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
+          <h2 className="modal-title">{isEdit ? 'Edit User / Staff' : 'Add New Staff / User'}</h2>
           <button className="modal-close" onClick={onClose}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div className="modal-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <form onSubmit={handleSubmit} id="user-form" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div className="form-group">
-              <label className="form-label">Full Name</label>
+              <label className="form-label">Full Name <span className="required">*</span></label>
               <input required className="form-input" name="name" value={form.name} onChange={handleChange} placeholder="e.g. Rahul Kumar" />
             </div>
             <div className="form-group">
-              <label className="form-label">Username (Login ID)</label>
+              <label className="form-label">Username (Login ID) <span className="required">*</span></label>
               <input required className="form-input" name="username" value={form.username} onChange={handleChange} placeholder="e.g. rahul_staff" />
             </div>
             <div className="form-group">
@@ -77,15 +77,16 @@ const UserModal = ({ initialData, onClose, onSuccess }) => {
               <input type="password" required={!isEdit} className="form-input" name="password" value={form.password} onChange={handleChange} placeholder={isEdit ? 'Enter new password or leave blank' : 'Enter secure password'} />
             </div>
             <div className="form-group">
-              <label className="form-label">Role</label>
+              <label className="form-label">Role <span className="required">*</span></label>
               <select className="form-select" name="role" value={form.role} onChange={handleChange}>
-                <option value="finance_agent">Staff</option>
+                <option value="staff">Staff</option>
+                <option value="finance_agent">Finance Agent</option>
                 <option value="wholesaler">Wholesaler</option>
                 <option value="admin">Admin</option>
               </select>
             </div>
             
-            {form.role === 'finance_agent' && (
+            {(form.role === 'staff' || form.role === 'finance_agent') && (
               <div className="form-group">
                 <label className="form-label">Tab Access Permissions</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', border: '1px solid var(--border)', padding: '12px', borderRadius: '6px', background: 'var(--bg)' }}>
@@ -103,14 +104,13 @@ const UserModal = ({ initialData, onClose, onSuccess }) => {
                 </div>
               </div>
             )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
-              <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={loading}>
-                {loading ? 'Saving...' : '💾 Save Staff'}
-              </button>
-            </div>
           </form>
+        </div>
+        <div className="modal-footer" style={{ flexShrink: 0 }}>
+          <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+          <button type="submit" form="user-form" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Saving...' : '💾 Save User'}
+          </button>
         </div>
       </div>
     </div>
@@ -127,7 +127,6 @@ const Users = () => {
     try {
       setLoading(true)
       const res = await api.get('/auth/users')
-      console.log('Fetched users:', res.data.data)
       setUsers(res.data.data || [])
     } catch (error) {
       console.error(error)
@@ -141,13 +140,21 @@ const Users = () => {
   }, [])
 
   const handleDelete = async (id, name) => {
-    if (!window.confirm(`Are you sure you want to delete staff: ${name}?`)) return
+    if (!window.confirm(`Are you sure you want to delete user: ${name}?`)) return
     try {
       await api.delete(`/auth/users/${id}`)
       setUsers(users.filter(u => u._id !== id))
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to delete staff')
+      alert(err.response?.data?.message || 'Failed to delete user')
     }
+  }
+
+  const formatRoleLabel = (role) => {
+    if (role === 'staff') return 'STAFF'
+    if (role === 'finance_agent') return 'FINANCE AGENT'
+    if (role === 'wholesaler') return 'WHOLESALER'
+    if (role === 'admin') return 'ADMIN'
+    return String(role || '').toUpperCase()
   }
 
   return (
@@ -162,12 +169,12 @@ const Users = () => {
 
       <div className="page-header">
         <div className="page-header-left">
-          <h1>Staff Management</h1>
-          <p>Manage staff, finance agents, and admin accounts</p>
+          <h1>Staff & User Management</h1>
+          <p>Manage staff, finance agents, wholesalers, and admin accounts</p>
         </div>
         <div className="page-header-right">
           <button className="btn btn-primary" onClick={() => { setEditingUser(null); setShowModal(true); }}>
-            + Add New Staff
+            + Add New User / Staff
           </button>
         </div>
       </div>
@@ -175,7 +182,7 @@ const Users = () => {
       <div className="card">
         <div className="card-body">
           {loading ? (
-            <p style={{ padding: '20px', color: 'var(--text-muted)' }}>Loading staff...</p>
+            <p style={{ padding: '20px', color: 'var(--text-muted)' }}>Loading users...</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table className="data-table">
@@ -193,8 +200,8 @@ const Users = () => {
                 <tbody>
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
-                        No staff found.
+                      <td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
+                        No users found.
                       </td>
                     </tr>
                   ) : (
@@ -215,10 +222,10 @@ const Users = () => {
                         <td>
                           <span style={{
                             padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600,
-                            background: u.role === 'admin' ? 'var(--danger-light)' : 'var(--orange-light)',
-                            color: u.role === 'admin' ? 'var(--danger)' : 'var(--orange)'
+                            background: u.role === 'admin' ? 'var(--danger-light)' : u.role === 'staff' ? 'var(--primary-light)' : 'var(--orange-light)',
+                            color: u.role === 'admin' ? 'var(--danger)' : u.role === 'staff' ? 'var(--primary)' : 'var(--orange)'
                           }}>
-                            {u.role === 'finance_agent' ? 'STAFF' : u.role.toUpperCase()}
+                            {formatRoleLabel(u.role)}
                           </span>
                         </td>
                         <td>{new Date(u.createdAt).toLocaleDateString()}</td>

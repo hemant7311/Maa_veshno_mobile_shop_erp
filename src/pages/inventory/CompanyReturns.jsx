@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react'
 import {
   getAllCompanyReturns, getCompanyReturnById, createCompanyReturn, deleteCompanyReturn,
   getAllSuppliers, getAllProducts, getAvailableImeisByProduct, getAllImeis,
-  exportCompanyReturns, exportCompanyReturnsByMobile, downloadBlob
+  exportCompanyReturns, downloadBlob
 } from '../../services/api'
+import { subscribeSuppliersChanged } from '../../utils/supplierEvents'
+import ImeiScannerModal from '../../components/common/ImeiScannerModal'
 
 const formatDate = (d) => {
   if (!d) return ''
   const date = new Date(d)
+  if (isNaN(date.getTime())) return ''
   return date.toISOString().split('T')[0]
 }
 
@@ -62,6 +65,7 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
   const [loadingProducts, setLoadingProducts] = useState(false)
   const [loadingImeis, setLoadingImeis] = useState(false)
   const [imeiSearch, setImeiSearch] = useState('')
+  const [showScanner, setShowScanner] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -99,6 +103,10 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
   useEffect(() => {
     loadSuppliers()
     loadProducts()
+    const unsubscribe = subscribeSuppliersChanged(() => {
+      loadSuppliers()
+    })
+    return unsubscribe
   }, [])
 
   const selectedProduct = products.find(p => p._id === form.productId)
@@ -133,7 +141,7 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
     if (hasImeiTracking && form.selectedImeis.length > 0) {
       setForm(prev => ({ ...prev, quantity: form.selectedImeis.length }))
     }
-  }, [form.selectedImeis])
+  }, [form.selectedImeis, hasImeiTracking])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -150,11 +158,23 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
     })
   }
 
+  const handleScanCode = (code) => {
+    const matched = availableImeis.find(i => String(i.imeiNumber).trim() === code.trim())
+    if (matched) {
+      if (!form.selectedImeis.includes(matched._id)) {
+        handleImeiToggle(matched._id)
+      }
+      setShowScanner(false)
+    } else {
+      alert(`IMEI "${code}" not found or not available for this product.`)
+    }
+  }
+
   const handleSubmit = async () => {
     if (!form.supplierId) { setError('Please select a supplier/company'); return }
     if (!form.productId) { setError('Please select a product'); return }
-    if (hasImeiTracking && form.selectedImeis.length === 0 && !form.quantity) {
-      setError('Please select at least one IMEI or enter quantity'); return
+    if (hasImeiTracking && form.selectedImeis.length === 0) {
+      setError('Please select at least one available IMEI for this product'); return
     }
     if (!form.quantity || Number(form.quantity) < 1) { setError('Quantity must be at least 1'); return }
 
@@ -164,13 +184,18 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
       const selectedImeiObjects = availableImeis.filter(i => form.selectedImeis.includes(i._id))
       const imeiNumbers = selectedImeiObjects.map(i => i.imeiNumber)
 
+      // Canonical payload matching backend contract
       const payload = {
-        supplierId: form.supplierId,
-        productId: form.productId,
+        supplier: form.supplierId,
+        product: form.productId,
         quantity: hasImeiTracking && form.selectedImeis.length > 0 ? form.selectedImeis.length : Number(form.quantity),
         returnDate: form.returnDate,
         reason: form.reason === 'Other' ? (form.customReason || 'Other') : form.reason,
         notes: form.notes,
+        imeis: imeiNumbers,
+        // Backward-compatibility aliases
+        supplierId: form.supplierId,
+        productId: form.productId,
         imeiIds: form.selectedImeis,
         imeiNumbers: imeiNumbers
       }
@@ -184,11 +209,17 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
     }
   }
 
-
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px' }}>
-        <div className="modal-header">
+      {showScanner && (
+        <ImeiScannerModal
+          onClose={() => setShowScanner(false)}
+          onScan={handleScanCode}
+        />
+      )}
+
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '720px', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div>
             <h2 className="modal-title">Create Company Return</h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -199,7 +230,8 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+
+        <div className="modal-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
           <div className="form-grid">
             <div className="form-group">
               <label className="form-label">Supplier / Company <span className="required">*</span></label>
@@ -243,11 +275,23 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
 
             {hasImeiTracking && form.productId && (
               <div className="form-group form-grid-full">
-                  <label className="form-label">
-                    Select IMEIs <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
-                      ({form.selectedImeis.length} selected / {availableImeis.length} available)
-                    </span>
-                  </label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label className="form-label" style={{ margin: 0 }}>
+                      Select IMEIs <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 400 }}>
+                        ({form.selectedImeis.length} selected / {availableImeis.length} available)
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setShowScanner(true)}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+                      Open Camera Scanner
+                    </button>
+                  </div>
+
                   <div style={{ marginBottom: '10px' }}>
                     <div className="search-bar" style={{ margin: 0, padding: '0 12px' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -371,7 +415,7 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
           </div>
           {error && <p style={{ fontSize: '13px', color: 'var(--danger)', marginTop: '12px' }}>{error}</p>}
         </div>
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ flexShrink: 0 }}>
           <button className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button className="btn btn-success" onClick={handleSubmit} disabled={saving}>
             {saving ? 'Creating...' : 'Create Return'}
@@ -386,8 +430,8 @@ const CreateReturnModal = ({ onClose, onSaved }) => {
 const ViewReturnModal = ({ returnItem, onClose }) => {
   return (
     <div className="modal-overlay" onClick={onClose} style={{ overflowY: 'auto' }}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '680px', margin: '24px auto' }}>
-        <div className="modal-header">
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '680px', margin: '24px auto', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <div>
             <h2 className="modal-title">Return Details</h2>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -398,7 +442,7 @@ const ViewReturnModal = ({ returnItem, onClose }) => {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        <div className="modal-body">
+        <div className="modal-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '12px', marginBottom: '20px' }}>
             <div className="stat-card" style={{ padding: '14px' }}>
               <div className="stat-card-label">Return Date</div>
@@ -420,7 +464,7 @@ const ViewReturnModal = ({ returnItem, onClose }) => {
               <div style={{ fontWeight: 600 }}>
                 {typeof returnItem?.supplierId === 'object'
                   ? `${returnItem.supplierId.name || ''} ${returnItem.supplierId.shopName ? `(${returnItem.supplierId.shopName})` : ''}`
-                  : (returnItem?.supplierName || returnItem?.supplier || '—')}
+                  : (returnItem?.supplierName || returnItem?.supplier?.name || returnItem?.supplier || '—')}
               </div>
             </div>
             <div>
@@ -428,7 +472,7 @@ const ViewReturnModal = ({ returnItem, onClose }) => {
               <div style={{ fontWeight: 600 }}>
                 {typeof returnItem?.productId === 'object'
                   ? returnItem.productId.productName || '—'
-                  : (returnItem?.productName || returnItem?.product || '—')}
+                  : (returnItem?.productName || returnItem?.product?.productName || returnItem?.product || '—')}
               </div>
             </div>
             <div>
@@ -441,27 +485,7 @@ const ViewReturnModal = ({ returnItem, onClose }) => {
             </div>
           </div>
 
-          {returnItem?.imeiNumbers && returnItem.imeiNumbers.length > 0 && (
-            <>
-              <h3 className="section-title">IMEI Numbers ({returnItem.imeiNumbers.length})</h3>
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '12px',
-                background: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)'
-              }}>
-                {returnItem.imeiNumbers.map((imei, i) => (
-                  <span key={i} style={{
-                    fontFamily: 'monospace', fontSize: '12px', padding: '6px 10px',
-                    background: 'var(--white)', border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)', fontWeight: 600
-                  }}>
-                    {imei}
-                  </span>
-                ))}
-              </div>
-            </>
-          )}
-
-          {(returnItem?.imeis && returnItem.imeis.length > 0 && !returnItem?.imeiNumbers) && (
+          {returnItem?.imeis && returnItem.imeis.length > 0 && (
             <>
               <h3 className="section-title">IMEI Numbers ({returnItem.imeis.length})</h3>
               <div style={{
@@ -469,19 +493,19 @@ const ViewReturnModal = ({ returnItem, onClose }) => {
                 background: 'var(--bg)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)'
               }}>
                 {returnItem.imeis.map((imei, i) => (
-                  <span key={imei._id || i} style={{
+                  <span key={i} style={{
                     fontFamily: 'monospace', fontSize: '12px', padding: '6px 10px',
                     background: 'var(--white)', border: '1px solid var(--border)',
                     borderRadius: 'var(--radius-sm)', fontWeight: 600
                   }}>
-                    {typeof imei === 'string' ? imei : (imei.imeiNumber || '—')}
+                    {typeof imei === 'string' ? imei : imei.imeiNumber}
                   </span>
                 ))}
               </div>
             </>
           )}
         </div>
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ flexShrink: 0 }}>
           <button className="btn btn-outline" onClick={onClose}>Close</button>
         </div>
       </div>
@@ -504,14 +528,14 @@ const DeleteConfirmModal = ({ returnItem, onClose, onConfirmed }) => {
   }
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
-        <div className="modal-header">
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '460px', display: 'flex', flexDirection: 'column' }}>
+        <div className="modal-header" style={{ flexShrink: 0 }}>
           <h2 className="modal-title">Delete Return Record</h2>
           <button className="modal-close" onClick={onClose}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
-        <div className="modal-body">
+        <div className="modal-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
           <div style={{ padding: '14px', background: 'var(--danger-light)', borderRadius: 'var(--radius-md)', marginBottom: '16px', border: '1px solid #FECACA' }}>
             <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Deleting return record</div>
             <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--danger)' }}>
@@ -521,7 +545,7 @@ const DeleteConfirmModal = ({ returnItem, onClose, onConfirmed }) => {
           <p>Are you sure you want to permanently delete this return record? This action cannot be undone.</p>
           {error && <p style={{ fontSize: '13px', color: 'var(--danger)', marginTop: '10px' }}>{error}</p>}
         </div>
-        <div className="modal-footer">
+        <div className="modal-footer" style={{ flexShrink: 0 }}>
           <button className="btn btn-outline" onClick={onClose} disabled={saving}>Cancel</button>
           <button className="btn btn-danger" onClick={handleConfirm} disabled={saving}>
             {saving ? 'Deleting...' : 'Delete Permanently'}
@@ -534,12 +558,6 @@ const DeleteConfirmModal = ({ returnItem, onClose, onConfirmed }) => {
 
 /* ========================== MAIN PAGE ========================== */
 const CompanyReturns = () => {
-  const returnTabs = [
-    { key: 'All',     label: 'All Returns',     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> },
-    { key: 'company', label: 'Company Returns', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> },
-    { key: 'private', label: 'Private Returns', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg> },
-  ];
-
   const [returns, setReturns] = useState([])
   const [search, setSearch] = useState('')
   const [startDate, setStartDate] = useState('')
@@ -557,7 +575,6 @@ const CompanyReturns = () => {
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [viewingReturn, setViewingReturn] = useState(null)
   const [deletingReturn, setDeletingReturn] = useState(null)
-  const [downloadingReturnId, setDownloadingReturnId] = useState(null)
 
   const { toasts, showToast, removeToast } = useToasts()
 
@@ -575,48 +592,24 @@ const CompanyReturns = () => {
   }
 
   useEffect(() => { loadAll() }, [])
-
   useEffect(() => { setCurrentPage(1) }, [search, startDate, endDate])
 
-  
-  const brands = ['All', ...new Set(returns.map(r => r.product?.brand || r.productId?.brand || r.productBrand).filter(Boolean))];
-  
-  const extractedSuppliers = [];
-  const seenSupplierIds = new Set();
-  returns.forEach(r => {
-    const sId = r.supplier?._id || r.supplierId?._id || r.supplier || r.supplierId;
-    const sName = r.supplier?.name || r.supplierId?.name || r.supplierName || r.supplier;
-    const sType = String(r.supplier?.type || r.supplierId?.type || 'company').toLowerCase();
-    
-    if (sId && sName && typeof sName === 'string' && !seenSupplierIds.has(String(sId))) {
-      if (filterSupplierType === 'All' || sType === filterSupplierType.toLowerCase()) {
-         seenSupplierIds.add(String(sId));
-         extractedSuppliers.push({ _id: String(sId), name: sName });
-      }
-    }
-  });
-  const suppliersByType = extractedSuppliers;
-  
   const filtered = returns.filter(r => {
-    if (filterSupplierType !== 'All') {
-      const sType = String(r.supplier?.type || r.supplierId?.type || 'company').toLowerCase();
-      if (sType !== filterSupplierType.toLowerCase()) return false;
-    }
-    if (filterBrand !== 'All') {
-      const pBrand = r.product?.brand || r.productId?.brand || r.productBrand;
-      if (pBrand !== filterBrand) return false;
-    }
-    if (filterSupplierId !== 'All') {
-      const sId = r.supplier?._id || r.supplierId?._id || r.supplier || r.supplierId;
-      if (String(sId) !== filterSupplierId) return false;
-    }
+    const sType = String(r.supplier?.type || r.supplierId?.type || 'company').toLowerCase()
+    if (filterSupplierType !== 'All' && sType !== filterSupplierType.toLowerCase()) return false
+    
+    const pBrand = r.product?.brand || r.productId?.brand || r.brand || ''
+    if (filterBrand !== 'All' && pBrand !== filterBrand) return false
 
-    const supplierName = typeof r?.supplierId === 'object' ? (r.supplierId.name || '') : (r?.supplierName || r?.supplier || '')
-    const productName = typeof r?.productId === 'object' ? (r.productId.productName || '') : (r?.productName || r?.product || '')
+    const sId = r.supplier?._id || r.supplierId?._id || r.supplier || r.supplierId
+    if (filterSupplierId !== 'All' && String(sId) !== filterSupplierId) return false
+
+    const supplierName = r.supplier?.name || (typeof r?.supplierId === 'object' ? r.supplierId.name : r?.supplierName) || ''
+    const productName = r.product?.productName || (typeof r?.productId === 'object' ? r.productId.productName : r?.productName) || ''
     const returnId = r?.returnId || r?._id || ''
     const reason = r?.reason || ''
     const notes = r?.notes || ''
-    const imeis = r?.imeiNumbers || r?.imeis || []
+    const imeis = r?.imeis || r?.imeiNumbers || []
     const imeisStr = imeis.map(i => typeof i === 'string' ? i : (i.imeiNumber || '')).join(' ')
 
     const haystack = `${supplierName} ${productName} ${returnId} ${reason} ${notes} ${imeisStr}`.toLowerCase()
@@ -625,16 +618,6 @@ const CompanyReturns = () => {
 
   const totalReturns = filtered.length
   const totalQuantity = filtered.reduce((sum, r) => sum + Number(r.quantity || 0), 0)
-  const productCounts = {}
-  filtered.forEach(r => {
-    const pName = typeof r?.productId === 'object'
-      ? (r.productId.productName || 'Unknown')
-      : (r?.productName || r?.product || 'Unknown')
-    productCounts[pName] = (productCounts[pName] || 0) + Number(r.quantity || 0)
-  })
-  const topProductEntry = Object.entries(productCounts).sort((a, b) => b[1] - a[1])[0]
-  const topProduct = topProductEntry ? `${topProductEntry[0]} (${topProductEntry[1]})` : '—'
-
   const totalPages = Math.ceil(filtered.length / itemsPerPage)
   const lastIdx = currentPage * itemsPerPage
   const firstIdx = lastIdx - itemsPerPage
@@ -643,126 +626,27 @@ const CompanyReturns = () => {
   const handleDownloadSheet = async () => {
     try {
       setExportingSheet(true)
-      const params = {}
-      if (startDate) params.startDate = startDate
-      if (endDate) params.endDate = endDate
-      
-      const headers = ['Return ID', 'Date', 'Supplier', 'Type', 'Product', 'Brand', 'Variant', 'Quantity', 'Reason', 'Status', 'IMEIs'];
+      const headers = ['Return ID', 'Date', 'Supplier', 'Type', 'Product', 'Brand', 'Quantity', 'Reason', 'Status', 'IMEIs']
       const rows = filtered.map(r => [
         r.returnId || '-',
-        formatDate(r.returnDate || r.date),
-        r.supplierId?.name || '-',
-        r.supplierId?.type || '-',
-        r.productId?.productName || '-',
-        r.productId?.brand || '-',
-        r.productId?.variant || '-',
+        formatDate(r.returnDate || r.createdAt),
+        r.supplier?.name || r.supplierName || '-',
+        r.supplier?.type || 'company',
+        r.product?.productName || r.productName || '-',
+        r.product?.brand || r.brand || '-',
         r.quantity || 1,
         r.reason || '-',
         r.status || '-',
-        (r.imeis || []).map(i => i.imeiNumber).join('; ')
-      ]);
-      const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const dateStr = new Date().toISOString().split('T')[0];
-      downloadBlob({ data: csvContent }, `stock_returns_${filterSupplierType}_${dateStr}.csv`);
-
+        (r.imeis || []).map(i => typeof i === 'string' ? i : i.imeiNumber).join('; ')
+      ])
+      const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n')
+      const dateStr = new Date().toISOString().split('T')[0]
+      downloadBlob({ data: csvContent }, `stock_returns_${dateStr}.csv`)
       showToast('Return sheet downloaded successfully')
     } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to download return sheet', 'error')
+      showToast('Failed to download return sheet', 'error')
     } finally { setExportingSheet(false) }
   }
-
-  const handleDownloadMobileSheet = async () => {
-    try {
-      setExportingMobileSheet(true)
-      const params = {}
-      if (startDate) params.startDate = startDate
-      if (endDate) params.endDate = endDate
-      const headers = ['Return ID', 'Date', 'Supplier', 'Type', 'Product', 'Brand', 'Variant', 'IMEI', 'Price', 'Reason', 'Status', 'Notes'];
-      const rows = [];
-      filtered.forEach(r => {
-        const baseRow = [
-          r.returnId || '-',
-          formatDate(r.returnDate || r.date),
-          r.supplier?.name || r.supplierId?.name || r.supplierName || '-',
-          r.supplier?.type || r.supplierId?.type || 'company',
-          r.product?.productName || r.productId?.productName || r.productName || '-',
-          r.product?.brand || r.productId?.brand || r.productBrand || '-',
-          r.product?.variant || r.productId?.variant || '-',
-          '', // IMEI placeholder
-          r.purchasePrice || 0,
-          r.reason || '-',
-          r.status || '-',
-          r.notes || ''
-        ];
-        
-        const imeis = r.imeis || r.imeiNumbers || [];
-        if (imeis.length === 0 && r.imei) {
-          const row = [...baseRow];
-          row[7] = r.imei;
-          rows.push(row);
-        } else if (imeis.length > 0) {
-          imeis.forEach(i => {
-            const row = [...baseRow];
-            row[7] = typeof i === 'string' ? i : (i.imeiNumber || '');
-            rows.push(row);
-          });
-        } else {
-          rows.push(baseRow);
-        }
-      });
-      
-      const csvContent = [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const dateStr = new Date().toISOString().split('T')[0];
-      downloadBlob({ data: csvContent }, `mobile_returns_${filterSupplierType}_${dateStr}.csv`);
-      showToast('Mobile-wise return sheet downloaded successfully')
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to download mobile return sheet', 'error')
-    } finally { setExportingMobileSheet(false) }
-  }
-
-  const handleDownloadSingleSheet = async (returnItem) => {
-    try {
-      setDownloadingReturnId(returnItem._id)
-      const params = { returnId: returnItem._id }
-      const res = await exportCompanyReturns(params)
-      const dateStr = formatDate(returnItem.returnDate || returnItem.date) || new Date().toISOString().split('T')[0]
-      const id = returnItem.returnId || returnItem._id
-      downloadBlob(res, `return_${id}_${dateStr}.csv`)
-      showToast('Return sheet downloaded')
-    } catch (err) {
-      showToast(err.response?.data?.message || 'Failed to download sheet', 'error')
-    } finally { setDownloadingReturnId(null) }
-  }
-
-  const getSupplierDisplay = (r) => {
-    if (typeof r?.supplierId === 'object') {
-      return `${r.supplierId.name || ''} ${r.supplierId.shopName ? `(${r.supplierId.shopName})` : ''}`.trim()
-    }
-    return r?.supplierName || r?.supplier || '—'
-  }
-
-  const getProductDisplay = (r) => {
-    if (typeof r?.productId === 'object') {
-      return r.productId.productName || '—'
-    }
-    return r?.productName || r?.product || '—'
-  }
-
-  const getImeiDisplay = (r) => {
-    const imeis = r?.imeiNumbers || (r?.imeis ? r.imeis.map(i => typeof i === 'string' ? i : i.imeiNumber) : [])
-    if (!imeis || imeis.length === 0) return '—'
-    if (imeis.length === 1) return imeis[0]
-    return `${imeis[0]} +${imeis.length - 1} more`
-  }
-
-  const statCards = [
-    { label: 'Total Returns', value: totalReturns, color: 'blue', icon: '📦' },
-    { label: 'Total Quantity Returned', value: totalQuantity, color: 'orange', icon: '🔄' },
-    { label: 'Top Returned Product', value: topProduct, color: 'purple', icon: '🏆' },
-    { label: 'Current Page Results', value: filtered.length, color: 'green', icon: '📋' }
-  ]
 
   return (
     <div>
@@ -791,9 +675,12 @@ const CompanyReturns = () => {
       <div className="page-header">
         <div className="page-header-left">
           <h1>Stock Returns (Company & Private)</h1>
-          <p>Track and manage products returned to company and private suppliers</p>
+          <p>Track and manage products returned to suppliers</p>
         </div>
         <div className="page-header-right">
+          <button className="btn btn-outline" onClick={handleDownloadSheet} disabled={exportingSheet}>
+            📥 Export CSV
+          </button>
           <button className="btn btn-primary" onClick={() => setShowCreateForm(true)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Create Return
@@ -801,200 +688,88 @@ const CompanyReturns = () => {
         </div>
       </div>
 
-      <div className="stat-cards-grid">
-        {statCards.map((s, i) => (
-          <div className="stat-card" key={i}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div className="stat-card-label">{s.label}</div>
-                <div className={`stat-card-value ${s.color}`} style={{ fontSize: s.label === 'Top Returned Product' ? '14px' : '22px', marginTop: '4px', wordBreak: 'break-word' }}>
-                  {s.value}
-                </div>
-              </div>
-              <div className={`stat-card-icon ${s.color}`} style={{ fontSize: '20px' }}>{s.icon}</div>
-            </div>
-          </div>
-        ))}
+      <div className="stat-cards-grid" style={{ marginBottom: '24px', gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="stat-card">
+          <span className="stat-card-label">Total Returns</span>
+          <div className="stat-card-value blue">{totalReturns}</div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-label">Total Quantity Returned</span>
+          <div className="stat-card-value orange">{totalQuantity}</div>
+        </div>
+        <div className="stat-card">
+          <span className="stat-card-label">Filtered Results</span>
+          <div className="stat-card-value green">{filtered.length}</div>
+        </div>
       </div>
 
-      
-<div className="table-wrapper">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--border)', flexWrap: 'wrap', gap: '12px' }}>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {returnTabs.map(tab => (
-              <button key={tab.key} onClick={() => { setFilterSupplierType(tab.key); setCurrentPage(1); }}
-                style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: `1px solid ${filterSupplierType.toLowerCase() === tab.key.toLowerCase() ? 'var(--primary)' : 'var(--border)'}`, background: filterSupplierType.toLowerCase() === tab.key.toLowerCase() ? 'var(--primary)' : 'var(--white)', color: filterSupplierType.toLowerCase() === tab.key.toLowerCase() ? 'var(--white)' : 'var(--text-secondary)', fontWeight: 600, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'var(--transition)' }}>
-                {tab.icon}
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-             <select className="form-select" value={filterBrand} onChange={e => { setFilterBrand(e.target.value); setCurrentPage(1); }} style={{ width: '180px', height: '36px', fontSize: '13px' }}>
-                {brands.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
-             </select>
-             <select className="form-select" value={filterSupplierId} onChange={e => { setFilterSupplierId(e.target.value); setCurrentPage(1); }} style={{ width: '220px', height: '36px', fontSize: '13px' }}>
-                <option value="All">All Suppliers</option>
-                {suppliersByType.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
-             </select>
-          </div>
-        </div>
+      {error && <div style={{ color: 'var(--danger)', background: 'var(--danger-light)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', marginBottom: '16px' }}>{error}</div>}
+
+      <div className="table-wrapper">
         <div className="table-toolbar">
           <div className="table-toolbar-left">
-            <div className="search-bar" style={{ minWidth: '280px' }}>
+            <div className="search-bar">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input placeholder="Search by return ID, supplier, product, IMEI..." value={search} onChange={e => setSearch(e.target.value)} />
+              <input placeholder="Search returns by ID, product, supplier, IMEI..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
-          </div>
-          <div className="table-toolbar-right" style={{ flexWrap: 'wrap', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>From:</label>
-              <input
-                type="date"
-                className="form-input"
-                value={startDate}
-                onChange={e => setStartDate(e.target.value)}
-                style={{ width: 'auto', height: '36px', padding: '6px 10px', fontSize: '13px' }}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <label style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>To:</label>
-              <input
-                type="date"
-                className="form-input"
-                value={endDate}
-                onChange={e => setEndDate(e.target.value)}
-                style={{ width: 'auto', height: '36px', padding: '6px 10px', fontSize: '13px' }}
-              />
-            </div>
-            {(startDate || endDate) && (
-              <button
-                className="btn btn-outline btn-sm"
-                onClick={() => { setStartDate(''); setEndDate('') }}
-              >
-                Clear
-              </button>
-            )}
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={handleDownloadSheet}
-              disabled={exportingSheet}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px' }}>
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-              </svg>
-              {exportingSheet ? 'Exporting...' : 'Return Sheet'}
-            </button>
-            <button
-              className="btn btn-outline btn-sm"
-              onClick={handleDownloadMobileSheet}
-              disabled={exportingMobileSheet}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px' }}>
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/>
-              </svg>
-              {exportingMobileSheet ? 'Exporting...' : 'Mobile-wise Sheet'}
-            </button>
           </div>
         </div>
 
-        {loading ? (
-          <div className="loading-state" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
-            <div className="spinner" style={{ margin: '0 auto 12px' }} />
-            Loading returns...
-          </div>
-        ) : error ? (
-          <div className="error-state" style={{ padding: '48px', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: '10px' }}>⚠️</div>
-            <h3 style={{ color: 'var(--danger)' }}>Something went wrong</h3>
-            <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>{error}</p>
-            <button className="btn btn-primary btn-sm" style={{ marginTop: '14px' }} onClick={loadAll}>Retry</button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">📦</div>
-            <h3>No returns found</h3>
-            <p>{search || startDate || endDate ? 'Try adjusting your search filters' : 'Click "Create Return" to record your first product return'}</p>
-          </div>
-        ) : (
-          <>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Return ID</th>
-                    <th>Date</th>
-                    <th>Company / Supplier</th>
-                    <th>Product</th>
-                    <th>Price</th>
-                    <th>IMEI</th>
-                    <th style={{ textAlign: 'center' }}>Qty</th>
-                    <th>Reason</th>
-                    <th style={{ textAlign: 'center' }}>Actions</th>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Return ID</th>
+                <th>Supplier</th>
+                <th>Product</th>
+                <th>IMEIs</th>
+                <th>Qty</th>
+                <th>Reason</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th style={{ textAlign: 'right' }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '24px' }}>Loading returns...</td></tr>
+              ) : pageItems.length === 0 ? (
+                <tr><td colSpan="9" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No returns found.</td></tr>
+              ) : (
+                pageItems.map(r => (
+                  <tr key={r._id}>
+                    <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{r.returnId || r._id}</td>
+                    <td>{r.supplier?.name || (typeof r.supplierId === 'object' ? r.supplierId.name : r.supplierName) || '—'}</td>
+                    <td>{r.product?.productName || (typeof r.productId === 'object' ? r.productId.productName : r.productName) || '—'}</td>
+                    <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>
+                      {r.imeis && r.imeis.length > 0
+                        ? `${typeof r.imeis[0] === 'string' ? r.imeis[0] : r.imeis[0].imeiNumber}${r.imeis.length > 1 ? ` (+${r.imeis.length - 1})` : ''}`
+                        : r.imei || '—'}
+                    </td>
+                    <td style={{ fontWeight: 600 }}>{r.quantity}</td>
+                    <td><ReasonBadge reason={r.reason} /></td>
+                    <td>{formatDate(r.returnDate || r.createdAt)}</td>
+                    <td><StatusBadge status={r.status || 'Returned'} /></td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button className="action-btn" title="View" onClick={() => setViewingReturn(r)} style={{ marginRight: '6px' }}>👁</button>
+                      <button className="action-btn danger" title="Delete" onClick={() => setDeletingReturn(r)}>🗑</button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {pageItems.map((r, i) => (
-                    <tr key={r._id}>
-                      <td style={{ color: 'var(--text-muted)' }}>{firstIdx + i + 1}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '12px', fontWeight: 600 }}>
-                        {r.returnId || r._id?.slice(-8) || '—'}
-                      </td>
-                      <td style={{ fontSize: '13px' }}>{formatDate(r.returnDate || r.date)}</td>
-                      <td style={{ fontWeight: 500 }}>{getSupplierDisplay(r)}</td>
-                      <td style={{ fontSize: '13px' }}>{getProductDisplay(r)}</td>
-                      <td style={{ fontSize: '13px', fontWeight: 600 }}>₹{(r.purchasePrice || (r.product?.costPrice) || 0).toLocaleString()}</td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>{getImeiDisplay(r)}</td>
-                      <td style={{ textAlign: 'center', fontWeight: 600 }}>{r.quantity || 0}</td>
-                      <td><ReasonBadge reason={r.reason} /></td>
-                      <td>
-                        <div className="action-btns" style={{ justifyContent: 'center' }}>
-                          <button className="action-btn" title="View Details" onClick={() => setViewingReturn(r)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                          </button>
-                          <button
-                            className="action-btn"
-                            title="Download Sheet"
-                            onClick={() => handleDownloadSingleSheet(r)}
-                            disabled={downloadingReturnId === r._id}
-                            style={{ color: 'var(--info)', borderColor: 'var(--info-light)', background: 'var(--info-light)' }}
-                          >
-                            {downloadingReturnId === r._id ? (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="spinner-sm">
-                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                              </svg>
-                            ) : (
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                              </svg>
-                            )}
-                          </button>
-                          <button className="action-btn danger" title="Delete" onClick={() => setDeletingReturn(r)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {totalPages > 1 && (
+          <div className="table-footer">
+            <span>Showing {firstIdx + 1} to {Math.min(lastIdx, filtered.length)} of {filtered.length}</span>
+            <div className="pagination">
+              <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>‹</button>
+              <span>Page {currentPage} of {totalPages}</span>
+              <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>›</button>
             </div>
-            {totalPages > 1 && (
-              <div className="table-footer">
-                <span>Showing {filtered.length === 0 ? 0 : firstIdx + 1} to {Math.min(lastIdx, filtered.length)} of {filtered.length} records</span>
-                <div className="pagination">
-                  <button className="pagination-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>‹</button>
-                  {Array.from({ length: totalPages }, (_, i) => (
-                    <button key={i + 1} className={`pagination-btn${currentPage === i + 1 ? ' active' : ''}`} onClick={() => setCurrentPage(i + 1)}>
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button className="pagination-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>›</button>
-                </div>
-              </div>
-            )}
-          </>
+          </div>
         )}
       </div>
     </div>

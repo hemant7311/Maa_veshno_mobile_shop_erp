@@ -8,12 +8,17 @@ const ProtectedRoute = ({ children, requireAdmin, requireAgent }) => {
 
   if (!isLoggedIn) return <Navigate to="/login" replace />
 
-  // If this route is STRICTLY for admins, block agents
+  // If user is wholesaler trying to access admin dashboard
+  if (user?.role === 'wholesaler' && location.pathname !== '/store') {
+    return <Navigate to="/store" replace />
+  }
+
+  // If route requires admin/staff level access
   if (requireAdmin && user?.role === 'finance_agent') {
     return <Navigate to="/agent-panel" replace />
   }
 
-  // If this route is STRICTLY for agents, block admins
+  // If route requires agent level access
   if (requireAgent && user?.role !== 'finance_agent') {
     return <Navigate to="/dashboard" replace />
   }
