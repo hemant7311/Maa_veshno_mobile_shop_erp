@@ -30,7 +30,7 @@ const Dashboard = () => {
   const loadDashboard = useCallback(async () => {
     try {
       const [dashRes, expRes] = await Promise.all([
-        api.get('/dashboard'),
+        api.get('/dashboard', { params: { date: selectedDate } }),
         api.get('/expenses')
       ])
 
@@ -41,6 +41,10 @@ const Dashboard = () => {
           todayProfit: d.todayProfit || 0,
           todayExpense: d.todayExpense || 0,
           todayStockIn: d.todayStockIn || 0,
+          todayCashProfit: d.todayCashProfit || 0,
+          todayUpiProfit: d.todayUpiProfit || 0,
+          todayReturnsCount: d.todayReturnsCount || 0,
+          todayReturnsAmount: d.todayReturnsAmount || 0,
           soldProducts: d.recentSales || [],
         }))
         if (d.totalProfit !== undefined) setTotalProfit(d.totalProfit)
@@ -62,7 +66,7 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Failed to load dashboard data:', err.message)
     }
-  }, [todayStr])
+  }, [selectedDate, todayStr])
 
   useEffect(() => {
     api.get('/imeis')
