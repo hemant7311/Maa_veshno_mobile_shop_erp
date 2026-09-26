@@ -148,7 +148,7 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                     <span>-₹{bill.totalDiscount?.toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
-                    <span>Tax/GST ({bill.gstPercent || 18}%):</span>
+                    <span>Tax/GST ({bill.gstPercent !== undefined ? bill.gstPercent : 18}%):</span>
                     <span>₹{bill.totalTax?.toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: '2px solid #1e3a8a', borderBottom: '2px solid #1e3a8a', fontWeight: 'bold', fontSize: '14px', marginTop: '4px' }}>
