@@ -30,15 +30,11 @@ const Dashboard = () => {
 
   const loadDashboard = useCallback(async () => {
     try {
-      const [dashRes, expRes] = await Promise.all([
-        api.get('/dashboard', { params: { date: selectedDate } }),
-        api.get('/expenses')
-      ])
+      const dashRes = await api.get('/dashboard', { params: { date: selectedDate } })
 
       if (dashRes.data?.success && dashRes.data?.data) {
         const d = dashRes.data.data
-        setDashboardData(prev => ({
-          ...prev,
+        setDashboardData({
           todayProfit: d.todayProfit || 0,
           todayExpense: d.todayExpense || 0,
           todayStockIn: d.todayStockIn || 0,
@@ -46,55 +42,40 @@ const Dashboard = () => {
           todayUpiProfit: d.todayUpiProfit || 0,
           todayReturnsCount: d.todayReturnsCount || 0,
           todayReturnsAmount: d.todayReturnsAmount || 0,
+          soldProducts: d.todaySoldProducts || d.soldProducts || [],
+          allSales: d.allSales || [],
           returnedProducts: d.returnedProducts || [],
-          soldProducts: d.soldProducts || d.recentSales || [],
-        }))
+          allReturnedProducts: d.allReturnedProducts || d.returnedProducts || [],
+          shopExpenses: d.todayExpenses || d.shopExpenses || [],
+          allExpenses: d.allExpenses || []
+        })
         if (d.totalProfit !== undefined) setTotalProfit(d.totalProfit)
         if (d.totalCashProfit !== undefined) setTotalCashProfit(d.totalCashProfit)
         if (d.totalUpiProfit !== undefined) setTotalUpiProfit(d.totalUpiProfit)
       }
-
-      if (expRes.data?.success && expRes.data?.data) {
-        const expenses = expRes.data.data.map(e => ({
-          id: e._id,
-          category: e.category,
-          amount: e.amount,
-          description: e.description,
-          date: e.date ? new Date(e.date).toLocaleDateString('en-CA') : todayStr,
-          time: e.createdAt ? new Date(e.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-        }))
-        setDashboardData(prev => ({ ...prev, shopExpenses: expenses }))
-      }
     } catch (err) {
       console.error('Failed to load dashboard data:', err.message)
     }
-  }, [selectedDate, todayStr])
+  }, [selectedDate])
 
   useEffect(() => {
-    api.get('/imeis')
-      .then(res => { if (res.data?.success) setAllImeis(res.data.data) })
-      .catch(() => {})
-
     loadDashboard()
   }, [loadDashboard])
 
-  const todayExpensesArr = dashboardData.shopExpenses.filter(i => i.date === selectedDate)
-  const computedExpense = todayExpensesArr.reduce((sum, item) => sum + Number(item.amount || 0), 0)
-  
-  const todayReturnsArr = dashboardData.returnedProducts.filter(i => i.date === selectedDate)
-  const computedReturn = todayReturnsArr.length
-  const computedReturnAmount = todayReturnsArr.reduce((sum, r) => sum + (r.price || 0), 0)
-  
-  const todaySalesArr = dashboardData.soldProducts.filter(i => i.date && i.date.startsWith(selectedDate))
-  const computedTotalItems = todaySalesArr.length
-  const computedProductsSold = todaySalesArr.length
-  
-  const computedProfit = dashboardData.todayProfit !== undefined ? dashboardData.todayProfit : 0
-  const todayCashProfit = dashboardData.todayCashProfit !== undefined ? dashboardData.todayCashProfit : 0
-  const todayUpiProfit = dashboardData.todayUpiProfit !== undefined ? dashboardData.todayUpiProfit : 0
+  const computedExpense = dashboardData.todayExpense || 0
+  const computedReturn = dashboardData.todayReturnsCount || 0
+  const computedReturnAmount = dashboardData.todayReturnsAmount || 0
+  const computedStockIn = dashboardData.todayStockIn || 0
+  const computedProfit = dashboardData.todayProfit || 0
+  const todayCashProfit = dashboardData.todayCashProfit || 0
+  const todayUpiProfit = dashboardData.todayUpiProfit || 0
 
-  const todayStockInArr = allImeis.filter(item => item.createdAt && item.createdAt.startsWith(selectedDate))
-  const computedStockIn = todayStockInArr.length > 0 ? todayStockInArr.length : (allImeis.length > 0 ? 0 : dashboardData.todayStockIn)
+  const displayedSales = showAllRecords ? (dashboardData.allSales || []) : (dashboardData.soldProducts || [])
+  const displayedExpenses = showAllRecords ? (dashboardData.allExpenses || []) : (dashboardData.shopExpenses || [])
+  const displayedReturns = showAllRecords ? (dashboardData.allReturnedProducts || []) : (dashboardData.returnedProducts || [])
+
+  const computedTotalItems = displayedSales.length
+  const computedProductsSold = displayedSales.length
 
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.category) {
@@ -374,8 +355,8 @@ const Dashboard = () => {
             </thead>
             <tbody>
               {activeView === 'sales' ? (
-                (showAllRecords ? dashboardData.soldProducts : todaySalesArr).map((p, index) => (
-                  <tr key={p.id}>
+                displayedSales.map((p, index) => (
+                  <tr key={p.id || index}>
                     <td style={{ color: 'var(--text-muted)' }}>{p.id}</td>
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.customer || p.name}</div>
@@ -385,25 +366,25 @@ const Dashboard = () => {
                     <td style={{ textAlign: 'center', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase' }}>{p.mode || p.paymentMethod || '-'}</td>
                     <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>₹{(p.amount || 0).toLocaleString('en-IN')}</td>
                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                      {p.date ? new Date(p.date).toLocaleDateString('en-IN') : p.time}
+                      {p.date ? (p.date.includes('T') ? new Date(p.date).toLocaleDateString('en-IN') : p.date) : p.time}
                     </td>
                   </tr>
                 ))
               ) : activeView === 'expenses' ? (
-                (showAllRecords ? dashboardData.shopExpenses : todayExpensesArr).map((e, index) => (
-                  <tr key={e.id}>
+                displayedExpenses.map((e, index) => (
+                  <tr key={e.id || index}>
                     <td style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{e.category}</div>
                     </td>
                     <td style={{ color: 'var(--text-secondary)' }}>{e.description || '-'}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--red)' }}>₹{e.amount.toLocaleString('en-IN')}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--red)' }}>₹{(e.amount || 0).toLocaleString('en-IN')}</td>
                     <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.time || e.date}</td>
                   </tr>
                 ))
               ) : (
-                (showAllRecords ? dashboardData.returnedProducts : todayReturnsArr).map((r, index) => (
-                  <tr key={r.id}>
+                displayedReturns.map((r, index) => (
+                  <tr key={r.id || index}>
                     <td style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
                     <td>
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{r.name}</div>
