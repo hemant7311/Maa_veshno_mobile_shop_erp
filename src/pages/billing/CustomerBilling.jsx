@@ -20,10 +20,20 @@ const SelectProductModal = ({ onClose, onSelect }) => {
       .finally(() => setLoading(false))
   }, [])
 
-  const filtered = products.filter(p =>
-    (p.imeiNumber && p.imeiNumber.toLowerCase().includes(search.toLowerCase())) ||
-    (p.barcode && p.barcode.toLowerCase().includes(search.toLowerCase()))
-  )
+  const searchTrim = search.trim().toLowerCase();
+  const filtered = products.filter(p => {
+    if (!searchTrim) return true;
+    return (
+      (p.productName && p.productName.toLowerCase().includes(searchTrim)) ||
+      (p.brand && p.brand.toLowerCase().includes(searchTrim)) ||
+      (p.model && p.model.toLowerCase().includes(searchTrim)) ||
+      (p.variant && p.variant.toLowerCase().includes(searchTrim)) ||
+      (p.categoryName && p.categoryName.toLowerCase().includes(searchTrim)) ||
+      (p.categoryId?.categoryName && p.categoryId.categoryName.toLowerCase().includes(searchTrim)) ||
+      (p.imeiNumber && p.imeiNumber.toLowerCase().includes(searchTrim)) ||
+      (p.barcode && p.barcode.toLowerCase().includes(searchTrim))
+    );
+  })
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -31,7 +41,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
         <div className="modal-header" style={{ padding: '16px 20px' }}>
           <div>
             <h2 className="modal-title" style={{ fontSize: '15px' }}>Select Product</h2>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Choose product to add to bill (by IMEI or Barcode)</p>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Choose product to add to bill (by Name, Brand, IMEI or Barcode)</p>
           </div>
           <button className="modal-close" onClick={onClose}>
             Close
@@ -42,11 +52,15 @@ const SelectProductModal = ({ onClose, onSelect }) => {
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center' }}>
             <div className="search-bar" style={{ flex: 1, margin: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input id="imei-input-customer-billing" placeholder="Search IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { 
+              <input id="imei-input-customer-billing" placeholder="Search Name, Brand, IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { 
                 if (e.key === 'Enter') {
                   const val = e.target.value.trim().toLowerCase();
                   if (!val) return;
                   const currentFiltered = products.filter(p => 
+                    (p.productName && p.productName.toLowerCase().includes(val)) ||
+                    (p.brand && p.brand.toLowerCase().includes(val)) ||
+                    (p.model && p.model.toLowerCase().includes(val)) ||
+                    (p.variant && p.variant.toLowerCase().includes(val)) ||
                     (p.imeiNumber && p.imeiNumber.toLowerCase().includes(val)) ||
                     (p.barcode && p.barcode.toLowerCase().includes(val))
                   );

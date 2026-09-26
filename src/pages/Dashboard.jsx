@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import { CreateReturnModal } from './inventory/CompanyReturns'
 
 const Dashboard = () => {
   const { user } = useAuth()
@@ -45,7 +46,8 @@ const Dashboard = () => {
           todayUpiProfit: d.todayUpiProfit || 0,
           todayReturnsCount: d.todayReturnsCount || 0,
           todayReturnsAmount: d.todayReturnsAmount || 0,
-          soldProducts: d.recentSales || [],
+          returnedProducts: d.returnedProducts || [],
+          soldProducts: d.soldProducts || d.recentSales || [],
         }))
         if (d.totalProfit !== undefined) setTotalProfit(d.totalProfit)
         if (d.totalCashProfit !== undefined) setTotalCashProfit(d.totalCashProfit)
@@ -254,6 +256,17 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Return Modal */}
+      {isReturnModalOpen && (
+        <CreateReturnModal 
+          onClose={() => setIsReturnModalOpen(false)} 
+          onSaved={() => {
+            setIsReturnModalOpen(false)
+            loadDashboard()
+          }} 
+        />
       )}
 
       {/* Header */}

@@ -56,7 +56,7 @@ const ReasonBadge = ({ reason }) => {
 }
 
 /* ============ CREATE RETURN FORM MODAL ============ */
-const CreateReturnModal = ({ onClose, onSaved }) => {
+export const CreateReturnModal = ({ onClose, onSaved }) => {
   const today = formatDate(new Date())
   const [suppliers, setSuppliers] = useState([])
   const [products, setProducts] = useState([])
