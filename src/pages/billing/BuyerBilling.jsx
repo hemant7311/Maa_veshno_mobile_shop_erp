@@ -107,6 +107,14 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, form, items, tota
       alert('Please add at least one product before generating a bill.')
       return
     }
+    const duplicateImeis = items
+      .map(i => i.imei)
+      .filter(imei => imei && imei !== 'N/A' && imei.trim() !== '')
+      .filter((imei, idx, self) => self.findIndex(t => t.toLowerCase() === imei.toLowerCase()) !== idx);
+    if (duplicateImeis.length > 0) {
+      alert(`Cannot save bill: Duplicate IMEI numbers in sale items list (${[...new Set(duplicateImeis)].join(', ')})`);
+      return;
+    }
     if (!form.shopName || !form.mobileNo) {
       alert('Please enter Shop Name and Mobile No.')
       return
@@ -330,6 +338,15 @@ const BuyerBilling = () => {
   const handleFormChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSelectProduct = (product) => {
+    if (product.imeiNumber && product.imeiNumber !== 'N/A' && product.imeiNumber.trim() !== '') {
+      const exists = items.some(item => 
+        item.imei && item.imei !== 'N/A' && item.imei.trim().toLowerCase() === product.imeiNumber.trim().toLowerCase()
+      );
+      if (exists) {
+        alert(`IMEI ${product.imeiNumber} is already added to this bill!`);
+        return;
+      }
+    }
     const newItem = {
       id: Date.now(),
       productId: product._id,
