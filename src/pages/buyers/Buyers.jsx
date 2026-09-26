@@ -142,8 +142,8 @@ const Buyers = () => {
           total: s.grandTotal,
           payStatus: s.paymentMode !== 'finance' ? 'Paid' : 'Pending',
           date: s.createdAt,
-          purchasedProducts: s.items.map(i => ({
-            id: i.productId || Math.random(),
+          purchasedProducts: s.items.map((i, idx) => ({
+            id: i.productId || i._id || idx,
             name: i.productName,
             category: 'Mobile',
             rate: i.price,

@@ -623,7 +623,7 @@ const CustomerBilling = () => {
 
   useEffect(() => {
     if (financeType === 'private' && !finance.fileNo) {
-      const generatedFileNo = 'FILE-' + Math.floor(Math.random() * 89999 + 10000);
+      const generatedFileNo = 'FILE-' + Date.now().toString().slice(-6);
       setFinance(prev => ({ ...prev, fileNo: generatedFileNo }));
     }
   }, [financeType, finance.fileNo]);
