@@ -5,7 +5,8 @@ const Sliders = () => {
   const [sliders, setSliders] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({ title: '', subtitle: '', mediaUrl: '', mediaType: 'image', isActive: true, order: 0 });
+  const [formData, setFormData] = useState({ title: '', subtitle: '', mediaUrl: '', mediaType: 'image', isActive: true, order: 0, mediaSource: 'upload' });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [editId, setEditId] = useState(null);
 
   useEffect(() => {
@@ -25,6 +26,7 @@ const Sliders = () => {
   };
 
   const handleOpen = (slider = null) => {
+    setSelectedFile(null);
     if (slider) {
       setEditId(slider._id);
       setFormData({
@@ -33,11 +35,12 @@ const Sliders = () => {
         mediaUrl: slider.mediaUrl || '',
         mediaType: slider.mediaType || 'image',
         isActive: slider.isActive ?? true,
-        order: slider.order || 0
+        order: slider.order || 0,
+        mediaSource: slider.mediaUrl && slider.mediaUrl.startsWith('/uploads/') ? 'upload' : 'url'
       });
     } else {
       setEditId(null);
-      setFormData({ title: '', subtitle: '', mediaUrl: '', mediaType: 'image', isActive: true, order: 0 });
+      setFormData({ title: '', subtitle: '', mediaUrl: '', mediaType: 'image', isActive: true, order: 0, mediaSource: 'upload' });
     }
     setShowModal(true);
   };
@@ -45,16 +48,38 @@ const Sliders = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (editId) {
-        await api.put(`/sliders/${editId}`, formData);
+      if (selectedFile) {
+        const payload = new FormData();
+        payload.append('mediaFile', selectedFile);
+        payload.append('title', formData.title);
+        payload.append('subtitle', formData.subtitle || '');
+        payload.append('mediaType', formData.mediaType || 'image');
+        payload.append('isActive', formData.isActive);
+        payload.append('order', formData.order || 0);
+
+        const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+        if (editId) {
+          await api.put(`/sliders/${editId}`, payload, config);
+        } else {
+          await api.post('/sliders', payload, config);
+        }
       } else {
-        await api.post('/sliders', formData);
+        if (!formData.mediaUrl && !editId) {
+          alert('Please select a media file or provide a URL.');
+          return;
+        }
+        if (editId) {
+          await api.put(`/sliders/${editId}`, formData);
+        } else {
+          await api.post('/sliders', formData);
+        }
       }
       setShowModal(false);
+      setSelectedFile(null);
       fetchSliders();
     } catch (err) {
       console.error(err);
-      alert('Error saving slider');
+      alert(err.response?.data?.message || 'Error saving slider');
     }
   };
 
@@ -146,36 +171,35 @@ const Sliders = () => {
                   <label>Media Type</label>
                   <select className="input-field" value={formData.mediaType} onChange={e => setFormData({...formData, mediaType: e.target.value})}>
                     <option value="image">Image</option>
-                    <option value="video">Video (MP4)</option>
+                    <option value="video">Video (MP4/WebM)</option>
                   </select>
                 </div>
                 
                 <div className="form-group">
                   <label>Media Source</label>
-                  <select className="input-field" value={formData.mediaSource || 'url'} onChange={e => setFormData({...formData, mediaSource: e.target.value, mediaUrl: ''})}>
+                  <select className="input-field" value={formData.mediaSource || 'upload'} onChange={e => { setSelectedFile(null); setFormData({...formData, mediaSource: e.target.value}); }}>
+                    <option value="upload">Upload File (Multer Storage)</option>
                     <option value="url">External Link (URL)</option>
-                    <option value="upload">Upload File (Base64)</option>
                   </select>
                 </div>
                 {(formData.mediaSource === 'upload') ? (
                   <div className="form-group">
-                    <label>Upload File</label>
+                    <label>Upload File {editId && '(Leave empty to keep current file)'}</label>
                     <input type="file" className="input-field" accept={formData.mediaType === 'video' ? 'video/mp4,video/webm' : 'image/*'} onChange={e => {
                       const file = e.target.files[0];
                       if (!file) return;
-                      if (file.size > 10 * 1024 * 1024) {
-                        alert('File is too large! Please select a file smaller than 10MB.');
+                      if (file.size > 50 * 1024 * 1024) {
+                        alert('File is too large! Maximum allowed size is 50MB.');
                         e.target.value = '';
                         return;
                       }
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        setFormData({...formData, mediaUrl: reader.result});
-                      };
-                      reader.readAsDataURL(file);
+                      setSelectedFile(file);
                     }} />
-                    {formData.mediaUrl && formData.mediaUrl.startsWith('data:') && (
-                      <div style={{marginTop: '8px', fontSize: '12px', color: 'green'}}>File selected and ready to save.</div>
+                    {selectedFile && (
+                      <div style={{marginTop: '8px', fontSize: '12px', color: 'green'}}>File selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)</div>
+                    )}
+                    {formData.mediaUrl && !selectedFile && (
+                      <div style={{marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)'}}>Current file: {formData.mediaUrl}</div>
                     )}
                   </div>
                 ) : (
