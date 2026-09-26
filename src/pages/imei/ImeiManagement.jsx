@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import api from '../../services/api'
+import ImeiScannerModal from '../../components/common/ImeiScannerModal'
 
 const statusLabel = (status) => status.charAt(0).toUpperCase() + status.slice(1)
 const badgeClass = (status) => ({ available: 'badge-success', sold: 'badge-warning', damaged: 'badge-danger', lost: 'badge-danger', reserved: 'badge-primary' }[status] || '')
@@ -10,6 +11,7 @@ const AddImeiModal = ({ products, onClose, onSaved }) => {
   const [imeiText, setImeiText] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showScanner, setShowScanner] = useState(false)
   const numbers = imeiText.split(/[\n,]+/).map((item) => item.trim()).filter(Boolean)
 
   const save = async () => {
@@ -53,10 +55,22 @@ const AddImeiModal = ({ products, onClose, onSaved }) => {
             </select>
           </div>
           <div className="form-group" style={{ marginTop: '14px' }}>
-            <label className="form-label">IMEI Number(s) <span className="required">*</span></label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <label className="form-label" style={{ margin: 0 }}>IMEI Number(s) <span className="required">*</span></label>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowScanner(true)} style={{ padding: '2px 10px', fontSize: '12px' }}>📷 Scan Camera</button>
+            </div>
             <textarea className="form-textarea" value={imeiText} onChange={(event) => setImeiText(event.target.value)} placeholder="One IMEI per line, or comma separated" rows="6" />
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{numbers.length} IMEI{numbers.length !== 1 ? 's' : ''} ready to add</span>
           </div>
+          {showScanner && (
+            <ImeiScannerModal
+              onClose={() => setShowScanner(false)}
+              onScan={(scannedVal) => {
+                setShowScanner(false)
+                setImeiText(prev => prev ? `${prev}\n${scannedVal}` : scannedVal)
+              }}
+            />
+          )}
         </div>
         <div className="modal-footer">
           <button className="btn btn-outline" onClick={onClose}>Cancel</button>
@@ -76,6 +90,7 @@ const ImeiManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('')
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showMainScanner, setShowMainScanner] = useState(false)
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -225,14 +240,27 @@ const ImeiManagement = () => {
 
       <div className="table-wrapper">
         <div className="table-toolbar">
-          <div className="table-toolbar-left">
+          <div className="table-toolbar-left" style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <div className="search-bar" style={{ minWidth: '260px' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
               </svg>
               <input placeholder="Search IMEI or product..." value={search} onChange={(event) => { setSearch(event.target.value); setCurrentPage(1) }} />
             </div>
+            <button type="button" className="btn btn-outline" onClick={() => setShowMainScanner(true)} title="Scan IMEI with Camera" style={{ height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📷 Scan
+            </button>
           </div>
+          {showMainScanner && (
+            <ImeiScannerModal
+              onClose={() => setShowMainScanner(false)}
+              onScan={(scannedVal) => {
+                setSearch(scannedVal)
+                setCurrentPage(1)
+                setShowMainScanner(false)
+              }}
+            />
+          )}
           <div className="table-toolbar-right">
             <select className="form-select" style={{ width: 'auto', height: '36px' }} value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setCurrentPage(1) }}>
               <option value="">All Categories</option>

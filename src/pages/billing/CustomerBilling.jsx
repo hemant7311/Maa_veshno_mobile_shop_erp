@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
 import html2canvas from 'html2canvas'
+import ImeiScannerModal from '../../components/common/ImeiScannerModal'
 
 const DEFAULT_WARRANTY_OPTIONS = ['No Guarantee', '1 Year Insurance', '6 Months Warranty', 'Screen Replacement', 'Liquid Damage']
 
@@ -9,6 +10,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showScanner, setShowScanner] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -54,13 +56,30 @@ const SelectProductModal = ({ onClose, onSelect }) => {
                 } 
               }} autoFocus />
             </div>
-            <button type="button" onClick={() => document.getElementById('imei-input-customer-billing').focus()} className="btn btn-outline" title="Scan barcode" style={{ flexShrink: 0, padding: '0 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', height: '40px' }}>
+            <button type="button" onClick={() => setShowScanner(true)} className="btn btn-outline" title="Scan barcode" style={{ flexShrink: 0, padding: '0 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', background: 'var(--bg)', color: 'var(--text-secondary)', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', height: '40px' }}>
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 5v14M7 5v14M13 5v14M17 5v14M21 5v14M10 5v6M10 13v6"/>
               </svg>
               Scan
             </button>
           </div>
+
+          {showScanner && (
+            <ImeiScannerModal
+              onClose={() => setShowScanner(false)}
+              onScan={(scannedVal) => {
+                setSearch(scannedVal)
+                setShowScanner(false)
+                const matched = products.find(p =>
+                  (p.imeiNumber && p.imeiNumber.toLowerCase() === scannedVal.toLowerCase()) ||
+                  (p.barcode && p.barcode.toLowerCase() === scannedVal.toLowerCase())
+                )
+                if (matched) {
+                  onSelect(matched)
+                }
+              }}
+            />
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', maxHeight: '280px', paddingRight: '4px' }}>
             {loading ? (
@@ -152,6 +171,20 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
          res = await api.put(`/sales/${editingSaleId}`, salePayload);
       } else {
          res = await api.post('/sales', salePayload);
+      }
+
+      const savedSale = res.data?.data
+      if (savedSale && savedSale._id) {
+        try {
+          const printEl = document.getElementById('print-area')
+          if (printEl) {
+            const canvas = await html2canvas(printEl, { scale: 2, useCORS: true, logging: false })
+            const imgData = canvas.toDataURL('image/png')
+            await api.post(`/sales/${savedSale._id}/bill-image`, { billImageUrl: imgData })
+          }
+        } catch (imgErr) {
+          console.warn('Failed to upload bill snapshot:', imgErr)
+        }
       }
 
       setIsSaving(false);
