@@ -16,7 +16,7 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
   const fetchProducts = async (searchTerm = '') => {
     try {
       setLoading(true)
-      const response = await api.get('/products', { params: searchTerm ? { search: searchTerm } : {} })
+      const response = await api.get('/products', { params: { inventoryUnits: 'true', ...(searchTerm ? { search: searchTerm } : {}) } })
       setProducts(response.data.data || [])
       setError('')
     } catch {
@@ -69,10 +69,11 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
     setShowScanner(false)
     try {
       setLoading(true)
-      const res = await api.get('/products', { params: { search: cleaned } })
+      const res = await api.get('/products', { params: { inventoryUnits: 'true', search: cleaned } })
       const matched = res.data.data || []
-      if (matched.length > 0) {
-        onSelect(matched[0])
+      const exactMatch = matched.find(p => String(p.imeiNumber || '').trim() === cleaned) || matched[0]
+      if (exactMatch && (!/^\d{15}$/.test(cleaned) || String(exactMatch.imeiNumber || '').trim() === cleaned)) {
+        onSelect(exactMatch)
       } else {
         const localMatch = products.find(p => String(p.imeiNumber || '').trim() === cleaned)
         if (localMatch) {
@@ -112,10 +113,14 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
                   if (/^\d{15}$/.test(val)) {
                     try {
                       setLoading(true)
-                      const res = await api.get('/products', { params: { search: val } })
+                      const res = await api.get('/products', { params: { inventoryUnits: 'true', search: val } })
                       const resProducts = res.data.data || []
-                      if (resProducts.length > 0) {
-                        onSelect(resProducts[0])
+                      const exactMatch = resProducts.find(p => String(p.imeiNumber || '').trim() === val)
+                      if (exactMatch) {
+                        onSelect(exactMatch)
+                        return
+                      } else {
+                        alert(`No available product found for IMEI ${val}`)
                         return
                       }
                     } catch (err) {
@@ -149,11 +154,13 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
             {loading ? (
               <p>Loading...</p>
             ) : filtered.map(p => (
-              <div key={p._id} onClick={() => onSelect(p)}
+              <div key={p.imeiId || (p._id + '-' + (p.imeiNumber || 'noimei'))} onClick={() => onSelect(p)}
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '13px' }}>{p.productName}</div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{p.brand}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {p.brand}{p.imeiNumber && p.imeiNumber !== '—' && p.imeiNumber !== 'N/A' ? ` · IMEI: ${p.imeiNumber}` : ''}
+                  </div>
                 </div>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>₹{(customerType === 'wholesale' ? (p.wholesalePrice || p.salePrice || 0) : (p.salePrice || 0)).toLocaleString('en-IN')}</div>
