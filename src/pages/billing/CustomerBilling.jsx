@@ -6,7 +6,7 @@ import { isValidIMEI, isValidMobile } from '../../utils/validators'
 
 const DEFAULT_WARRANTY_OPTIONS = ['No Guarantee', '1 Year Insurance', '6 Months Warranty', 'Screen Replacement', 'Liquid Damage']
 
-const SelectProductModal = ({ onClose, onSelect }) => {
+const SelectProductModal = ({ customerType, onClose, onSelect }) => {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
@@ -156,7 +156,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{p.brand}</div>
                 </div>
                 <div>
-                  <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>₹{p.salePrice}</div>
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--primary)' }}>₹{(customerType === 'wholesale' ? (p.wholesalePrice || p.salePrice || 0) : (p.salePrice || 0)).toLocaleString('en-IN')}</div>
                 </div>
               </div>
             ))}
@@ -759,6 +759,10 @@ const CustomerBilling = () => {
         return;
       }
     }
+    const selectedPrice = customerType === 'wholesale'
+      ? Number(product.wholesalePrice !== undefined && product.wholesalePrice !== null && product.wholesalePrice !== '' ? product.wholesalePrice : product.salePrice) || 0
+      : Number(product.salePrice) || 0;
+
     const newItem = {
       id: Date.now(),
       productId: product._id,
@@ -766,7 +770,7 @@ const CustomerBilling = () => {
       brand: product.brand,
       imei: product.imeiNumber || 'N/A',
       qty: 1,
-      price: Number(product.salePrice) || 0,
+      price: selectedPrice,
       purchasePrice: Number(product.purchasePrice ?? product.costPrice ?? 0),
       discount: 0
     }
@@ -808,7 +812,7 @@ const CustomerBilling = () => {
   /* ─── RENDER ─── */
   return (
     <div>
-      {showSelectModal && <SelectProductModal onClose={() => setShowSelectModal(false)} onSelect={handleSelectProduct} />}
+      {showSelectModal && <SelectProductModal customerType={customerType} onClose={() => setShowSelectModal(false)} onSelect={handleSelectProduct} />}
       {showPrintModal && (
         <PrintPreviewModal
           editingSaleId={editingSaleId}
