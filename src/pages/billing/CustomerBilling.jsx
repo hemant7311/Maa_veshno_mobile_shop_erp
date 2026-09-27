@@ -1291,7 +1291,8 @@ const CustomerBilling = () => {
                 <div style={{ marginTop: '12px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
                   <div style={{ fontWeight: 700, marginBottom: '4px', color: '#92400e' }}>⏰ Late EMI Collection Note</div>
                   <div style={{ color: '#78350f', fontSize: '12px', lineHeight: '1.5' }}>
-                    If a customer pays EMI after 2–3+ months, the collected amount in the Finance &gt; EMI Tracker section will show the correct outstanding. The tracker records actual payment date and marks month-by-month status so you can see exactly which months were skipped and when each was cleared.
+                    If a customer pays EMI late after 2–3+ months, the EMI Tracker automatically updates the actual outstanding amount.<br />
+                    It tracks payment dates and month-by-month status to show skipped and cleared installments clearly.
                   </div>
                 </div>
               )}
