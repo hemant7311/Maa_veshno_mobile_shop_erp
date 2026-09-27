@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
 import html2canvas from 'html2canvas'
 import ImeiScannerModal from '../../components/common/ImeiScannerModal'
+import { isValidMobile } from '../../utils/validators'
 
 /* ── Select Product Modal (Wholesale) ── */
 const SelectProductModal = ({ onClose, onSelect }) => {
@@ -117,6 +118,10 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, form, items, tota
     }
     if (!form.shopName || !form.mobileNo) {
       alert('Please enter Shop Name and Mobile No.')
+      return
+    }
+    if (!isValidMobile(form.mobileNo.trim())) {
+      alert('Mobile number must be exactly 10 digits.')
       return
     }
 
@@ -335,7 +340,13 @@ const BuyerBilling = () => {
 
   const total = items.reduce((sum, i) => sum + i.rate * i.qty, 0)
 
-  const handleFormChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
+  const handleFormChange = (e) => {
+    let { name, value } = e.target
+    if (name === 'mobileNo') {
+      value = value.replace(/\D/g, '').slice(0, 10)
+    }
+    setForm(prev => ({ ...prev, [name]: value }))
+  }
 
   const handleSelectProduct = (product) => {
     if (product.imeiNumber && product.imeiNumber !== 'N/A' && product.imeiNumber.trim() !== '') {

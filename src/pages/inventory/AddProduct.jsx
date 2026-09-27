@@ -134,7 +134,13 @@ const AddProduct = () => {
   }, [id, isEditing])
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    let { name, value } = e.target
+    if (name === 'imeiNumber') {
+      value = value.replace(/\D/g, '').slice(0, 15)
+    }
+    if (name === 'displaySize') {
+      value = value.replace(/\D/g, '').slice(0, 10)
+    }
     const categoryName = name === 'categoryId' ? categories.find((cat) => cat._id === value)?.categoryName : null
     
     // Auto-select company if they change the category select dropdown

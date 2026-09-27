@@ -519,7 +519,7 @@ const Suppliers = () => {
                     className="form-input" 
                     type="number"
                     value={editForm.phone} 
-                    onChange={e => setEditForm({ ...editForm, phone: e.target.value })} 
+                    onChange={e => setEditForm({ ...editForm, phone: e.target.value.replace(/\D/g, '').slice(0, 10) })} 
                     placeholder="Enter phone number"
                   />
                 </div>

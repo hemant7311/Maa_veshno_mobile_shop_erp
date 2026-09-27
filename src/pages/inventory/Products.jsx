@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { isValidIMEI } from '../../utils/validators'
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
 
@@ -23,7 +24,7 @@ const AddImeiModal = ({ product, onClose, onSaved }) => {
 
   const handleSave = async () => {
     if (!newImei.trim()) { setError('IMEI number daalna zaroori hai'); return }
-    if (newImei.trim().length < 14) { setError('IMEI kam se kam 14 digits ka hona chahiye'); return }
+    if (!isValidIMEI(newImei.trim())) { setError('IMEI must be exactly 15 digits.'); return }
     try {
       setSaving(true)
       setError('')
@@ -128,7 +129,7 @@ const AddImeiModal = ({ product, onClose, onSaved }) => {
                     id="imei-input-products"
                     className="form-input"
                     value={newImei}
-                    onChange={e => { setNewImei(e.target.value); setError('') }}
+                    onChange={e => { setNewImei(e.target.value.replace(/\D/g, '').slice(0, 15)); setError('') }}
                     placeholder="Enter 15-digit IMEI"
                     maxLength={15}
                     style={{ flex: 1, fontFamily: 'monospace', letterSpacing: '1px', fontSize: '14px' }}

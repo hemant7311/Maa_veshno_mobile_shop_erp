@@ -725,7 +725,13 @@ const CustomerBilling = () => {
     setShowSelectModal(false)
   }
 
-  const handleCustomerChange = (e) => setCustomer({ ...customer, [e.target.name]: e.target.value })
+  const handleCustomerChange = (e) => {
+    let { name, value } = e.target
+    if (name === 'mobile') {
+      value = value.replace(/\D/g, '').slice(0, 10)
+    }
+    setCustomer(prev => ({ ...prev, [name]: value }))
+  }
   const handleFinanceChange = (e) => setFinance({ ...finance, [e.target.name]: e.target.value })
 
   const handleWarrantyToggle = (option) => {

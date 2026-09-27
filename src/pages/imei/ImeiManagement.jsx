@@ -63,7 +63,7 @@ const AddImeiModal = ({ products, onClose, onSaved }) => {
           <div className="form-group" style={{ marginTop: '14px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <label className="form-label" style={{ margin: 0 }}>IMEI Number(s) <span className="required">*</span></label>
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowScanner(true)} style={{ padding: '2px 10px', fontSize: '12px' }}>📷 Scan Camera</button>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowScanner(true)} style={{ padding: '2px 10px', fontSize: '12px' }}>Scan Barcode</button>
             </div>
             <textarea className="form-textarea" value={imeiText} onChange={(event) => setImeiText(event.target.value)} placeholder="One IMEI per line, or comma separated" rows="6" />
             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{numbers.length} IMEI{numbers.length !== 1 ? 's' : ''} ready to add</span>
@@ -253,8 +253,8 @@ const ImeiManagement = () => {
               </svg>
               <input placeholder="Search IMEI or product..." value={search} onChange={(event) => { setSearch(event.target.value); setCurrentPage(1) }} />
             </div>
-            <button type="button" className="btn btn-outline" onClick={() => setShowMainScanner(true)} title="Scan IMEI with Camera" style={{ height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              📷 Scan
+            <button type="button" className="btn btn-outline" onClick={() => setShowMainScanner(true)} title="Scan IMEI with Barcode Scanner" style={{ height: '36px', padding: '0 12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Scan
             </button>
           </div>
           {showMainScanner && (

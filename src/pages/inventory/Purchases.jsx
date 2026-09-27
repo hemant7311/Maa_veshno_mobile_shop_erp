@@ -220,7 +220,7 @@ const Purchases = () => {
                   </div>
                   <div>
                     <label className="form-label">IMEI (optional)</label>
-                    <input className="form-input" value={currentItem.imei} onChange={e => setCurrentItem({...currentItem, imei: e.target.value})} placeholder="IMEI" />
+                    <input className="form-input" value={currentItem.imei} onChange={e => setCurrentItem({...currentItem, imei: e.target.value.replace(/\D/g, '').slice(0, 15)})} placeholder="IMEI" maxLength={15} />
                   </div>
                   <div>
                     <label className="form-label">Qty</label>

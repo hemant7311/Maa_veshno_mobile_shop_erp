@@ -59,13 +59,17 @@ const NewRecordModal = ({ onClose, onSaved, editRecord }) => {
   const [error, setError] = useState('')
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    let { name, value } = e.target
+    if (name === 'mobile') {
+      value = value.replace(/\D/g, '').slice(0, 10)
+    }
     setForm(prev => ({ ...prev, [name]: value }))
   }
 
   const handleSubmit = async () => {
     if (!form.customerName.trim()) { setError('Customer name is required'); return }
     if (!form.mobile.trim()) { setError('Mobile number is required'); return }
+    if (!isValidMobile(form.mobile.trim())) { setError('Mobile number must be exactly 10 digits.'); return }
     if (!form.amount || Number(form.amount) <= 0) { setError('Valid amount is required'); return }
     try {
       setSaving(true); setError('')

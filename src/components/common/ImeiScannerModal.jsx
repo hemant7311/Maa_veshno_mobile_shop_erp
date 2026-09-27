@@ -1,128 +1,86 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Html5Qrcode } from 'html5-qrcode'
 import { isValidIMEI } from '../../utils/validators'
 
 const ImeiScannerModal = ({ onClose, onScan }) => {
+  const [scannedInput, setScannedInput] = useState('')
   const [error, setError] = useState('')
-  const [cameras, setCameras] = useState([])
-  const [selectedCameraId, setSelectedCameraId] = useState('')
-  const scannerRef = useRef(null)
+  const inputRef = useRef(null)
 
   useEffect(() => {
-    let html5Qrcode = null
+    if (inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [])
 
-    const initScanner = async () => {
-      try {
-        const devices = await Html5Qrcode.getCameras()
-        if (devices && devices.length > 0) {
-          setCameras(devices)
-          // Prefer back camera if available
-          const backCam = devices.find(d => d.label.toLowerCase().includes('back') || d.label.toLowerCase().includes('rear'))
-          const cameraId = backCam ? backCam.id : devices[0].id
-          setSelectedCameraId(cameraId)
+  const handleSubmit = (e) => {
+    if (e) e.preventDefault()
+    const rawValue = scannedInput.trim()
 
-          html5Qrcode = new Html5Qrcode('qr-reader-element')
-          scannerRef.current = html5Qrcode
-
-          await html5Qrcode.start(
-            cameraId,
-            { fps: 10, qrbox: { width: 250, height: 150 } },
-            (decodedText) => {
-              if (decodedText) {
-                const cleaned = String(decodedText).trim()
-                if (cleaned) {
-                  if (isValidIMEI(cleaned)) {
-                    onScan(cleaned)
-                  } else {
-                    setError('Scanned value is invalid. IMEI must be exactly 15 digits.')
-                  }
-                }
-              }
-            },
-            (errorMessage) => {
-              // Ignore scan frame error messages
-            }
-          )
-        } else {
-          setError('No camera found on this device.')
-        }
-      } catch (err) {
-        console.error('Camera permission or initialization error:', err)
-        setError('Camera permission denied or camera not available. You can still enter IMEI manually.')
-      }
+    // USB Hardware Scanner validation rule:
+    // Raw value must be EXACTLY 15 numeric digits.
+    // If >15, <15, or contains non-digits, REJECT with "IMEI must be exactly 15 digits."
+    if (!rawValue || rawValue.length !== 15 || !/^\d{15}$/.test(rawValue) || !isValidIMEI(rawValue)) {
+      setError('IMEI must be exactly 15 digits.')
+      return
     }
 
-    initScanner()
+    setError('')
+    onScan(rawValue)
+  }
 
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop().catch(err => console.warn('Failed to stop camera:', err))
-        scannerRef.current = null
-      }
-    }
-  }, [onScan])
+  const handleChange = (e) => {
+    const val = e.target.value
+    setScannedInput(val)
+    if (error) setError('')
+  }
 
-  const handleCameraChange = async (e) => {
-    const newCameraId = e.target.value
-    setSelectedCameraId(newCameraId)
-    if (scannerRef.current) {
-      try {
-        await scannerRef.current.stop()
-        await scannerRef.current.start(
-          newCameraId,
-          { fps: 10, qrbox: { width: 250, height: 150 } },
-          (decodedText) => {
-            if (decodedText) {
-              const cleaned = String(decodedText).trim()
-              if (cleaned) onScan(cleaned)
-            }
-          },
-          () => {}
-        )
-      } catch (err) {
-        console.error('Failed to switch camera:', err)
-      }
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleSubmit()
     }
   }
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
-      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '480px', display: 'flex', flexDirection: 'column' }}>
         <div className="modal-header">
           <div>
-            <h2 className="modal-title">Camera / Barcode Scanner</h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Point camera at IMEI or Barcode</p>
+            <h2 className="modal-title">Hardware / USB Barcode Scanner</h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Scan IMEI using USB Hardware Scanner</p>
           </div>
           <button className="modal-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="modal-body" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '16px' }}>
-          {cameras.length > 1 && (
-            <div style={{ marginBottom: '12px' }}>
-              <label className="form-label">Select Camera</label>
-              <select className="form-select" value={selectedCameraId} onChange={handleCameraChange}>
-                {cameras.map(c => (
-                  <option key={c.id} value={c.id}>{c.label || `Camera ${c.id}`}</option>
-                ))}
-              </select>
+        <form onSubmit={handleSubmit} className="modal-body" style={{ padding: '24px 16px' }}>
+          <div style={{ marginBottom: '16px' }}>
+            <label className="form-label" style={{ fontWeight: 600, marginBottom: '8px', display: 'block' }}>
+              Scan 15-Digit IMEI Barcode
+            </label>
+            <input
+              ref={inputRef}
+              type="text"
+              className="form-control"
+              placeholder="Scan barcode with USB scanner..."
+              value={scannedInput}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              style={{ fontSize: '16px', padding: '10px 12px', width: '100%', letterSpacing: '1px', fontFamily: 'monospace' }}
+            />
+          </div>
+
+          {error && (
+            <div style={{ color: 'var(--danger, #ef4444)', fontSize: '13px', fontWeight: 500, marginTop: '8px' }}>
+              {error}
             </div>
           )}
 
-          <div
-            id="qr-reader-element"
-            style={{ width: '100%', minHeight: '260px', background: '#000', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}
-          />
-
-          {error && (
-            <p style={{ color: 'var(--danger)', fontSize: '13px', marginTop: '12px', textAlign: 'center' }}>
-              {error}
-            </p>
-          )}
-        </div>
-
-        <div className="modal-footer" style={{ flexShrink: 0 }}>
-          <button className="btn btn-outline" onClick={onClose}>Close Scanner</button>
-        </div>
+          <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+            <button type="button" className="btn btn-outline" onClick={onClose}>Cancel</button>
+            <button type="submit" className="btn btn-primary">Add Scanned IMEI</button>
+          </div>
+        </form>
       </div>
     </div>
   )
