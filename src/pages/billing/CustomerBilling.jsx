@@ -704,7 +704,8 @@ const CustomerBilling = () => {
       brand: product.brand,
       imei: product.imeiNumber || 'N/A',
       qty: 1,
-      price: product.salePrice,
+      price: Number(product.salePrice) || 0,
+      purchasePrice: Number(product.purchasePrice ?? product.costPrice ?? 0),
       discount: 0
     }
     setItems(current => [...current, newItem])
