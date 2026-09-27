@@ -281,7 +281,8 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
           total: (i.price * i.qty) - i.discount
         })),
         financeDetails: payMode.includes('finance') ? {
-          company: financeType === 'company' ? finance.company : finance.privateFinancier,
+          financeType: financeType,
+          company: financeType === 'company' ? finance.company : (finance.privateFinancier || 'Self Finance'),
           loanId: finance.loanId,
           dpAmount: Number(finance.downPayment) || 0,
           emiAmount: Number(finance.emi) || 0,
@@ -397,7 +398,8 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
           total: (i.price * i.qty) - i.discount
         })),
         financeDetails: payMode.includes('finance') ? {
-          company: financeType === 'company' ? finance.company : finance.privateFinancier,
+          financeType: financeType,
+          company: financeType === 'company' ? finance.company : (finance.privateFinancier || 'Self Finance'),
           loanId: finance.loanId,
           dpAmount: Number(finance.downPayment) || 0,
           emiAmount: Number(finance.emi) || 0,
@@ -882,7 +884,18 @@ const CustomerBilling = () => {
               fileNo: sale.financeDetails.fileNo || '',
               emiPaymentMethod: sale.financeDetails.emiPaymentMethod || 'shop'
             });
-            setFinanceType(sale.financeDetails.loanId ? 'company' : 'private');
+            if (sale.financeDetails.financeType === 'private') {
+              setFinanceType('private');
+            } else if (sale.financeDetails.financeType === 'company') {
+              setFinanceType('company');
+            } else {
+              const compName = String(sale.financeDetails.company || '').trim().replace(/\s+/g, ' ').toLowerCase();
+              if (compName === 'self finance' || sale.financeDetails.fileNo) {
+                setFinanceType('private');
+              } else {
+                setFinanceType('company');
+              }
+            }
           }
           setItems(sale.items.map(i => ({ productId: i.productId, product: i.productName, imei: i.imei, qty: i.qty, price: i.price, purchasePrice: i.purchasePrice, discount: i.discount || 0, total: i.total })));
           setCustomDiscount(sale.totalDiscount || '');
