@@ -194,15 +194,18 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
   )
 }
 
-const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, onClose }) => {
+const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstPercent = 18, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, onClose }) => {
   const [isSaving, setIsSaving] = useState(false)
   const safeNum = (v) => (isNaN(v) || v == null ? 0 : Number(v));
     const safeSubtotal = safeNum(subtotal);
     const safeDiscount = safeNum(discountAmt);
+    const safeGstPercent = billType === 'gst' ? safeNum(gstPercent) : 0;
     const safeGst = billType === 'gst' ? safeNum(gstAmt) : 0;
-    const taxableValue = safeSubtotal - safeDiscount
-  const cgstAmt = safeGst / 2
-  const sgstAmt = safeGst / 2
+    const taxableValue = Math.max(0, safeSubtotal - safeDiscount);
+  const cgstRate = safeGstPercent / 2;
+  const sgstRate = safeGstPercent / 2;
+  const cgstAmt = safeGst / 2;
+  const sgstAmt = safeGst / 2;
   const finalInvoiceNo = existingInvoiceNo || 'Pending Save'
   const emiDayOnly = finance.emiPayDate ? new Date(finance.emiPayDate).getDate() : ''
   const emiMethodLabel = finance.emiPaymentMethod === 'bank' ? 'Auto bank deduction' : 'Will come to shop'
@@ -252,6 +255,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
         paymentMode: payMode[0] || 'cash',
         subTotal: subtotal,
         totalDiscount: discountAmt,
+        gstPercent: billType === 'gst' ? safeGstPercent : 0,
         totalTax: gstAmt,
         warrantySaleAmount: Number(warrantySaleAmount) || 0,
         grandTotal: grandTotal,
@@ -505,7 +509,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
                           {item.imei && item.imei !== '—' && <div style={{ fontSize: '10px', color: '#555', marginTop: '2px' }}>IMEI: {item.imei}</div>}
                         </td>
                         <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'center' }}>8517</td>
-                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'center' }}>18%</td>
+                        <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'center' }}>{billType === 'gst' ? `${safeGstPercent}%` : '0%'}</td>
                         <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'center' }}>{item.qty}</td>
                         <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>{item.price.toLocaleString('en-IN')}.00</td>
                         <td style={{ border: '1px solid #ddd', padding: '6px', textAlign: 'right' }}>{(item.price * item.qty).toLocaleString('en-IN')}.00</td>
@@ -553,14 +557,22 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
                           <td style={{ padding: '4px', textAlign: 'left' }}>Taxable value</td>
                           <td style={{ padding: '4px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>{taxableValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                         </tr>
-                        <tr>
-                          <td style={{ padding: '4px', textAlign: 'left' }}>SGST 9% @</td>
-                          <td style={{ padding: '4px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>{sgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        </tr>
-                        <tr>
-                          <td style={{ padding: '4px', textAlign: 'left' }}>CGST 9% @</td>
-                          <td style={{ padding: '4px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>{cgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                        </tr>
+                        {billType === 'gst' && (
+                          <>
+                            <tr>
+                              <td style={{ padding: '4px', textAlign: 'left' }}>GST ({safeGstPercent}%)</td>
+                              <td style={{ padding: '4px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>{safeGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: '4px', textAlign: 'left' }}>CGST ({cgstRate}%)</td>
+                              <td style={{ padding: '4px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>{cgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                            <tr>
+                              <td style={{ padding: '4px', textAlign: 'left' }}>SGST ({sgstRate}%)</td>
+                              <td style={{ padding: '4px', textAlign: 'right', borderBottom: '1px solid #ddd' }}>{sgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                            </tr>
+                          </>
+                        )}
                         {Number(warrantySaleAmount) > 0 && (
                           <tr>
                             <td style={{ padding: '4px', textAlign: 'left' }}>Warranty Sale</td>
@@ -688,7 +700,8 @@ const CustomerBilling = () => {
   const [agents, setAgents] = useState([])
   
   const [customDiscount, setCustomDiscount] = useState('')
-  const [customGstPercent, setCustomGstPercent] = useState('')
+  const [selectedGstOption, setSelectedGstOption] = useState('18')
+  const [customGstRateInput, setCustomGstRateInput] = useState('')
   const [customGrandTotal, setCustomGrandTotal] = useState('')
   const [editingSaleId, setEditingSaleId] = useState(null)
   const [existingInvoiceNo, setExistingInvoiceNo] = useState('')
@@ -731,6 +744,14 @@ const CustomerBilling = () => {
           setItems(sale.items.map(i => ({ productId: i.productId, product: i.productName, imei: i.imei, qty: i.qty, price: i.price, purchasePrice: i.purchasePrice, discount: i.discount || 0, total: i.total })));
           setCustomDiscount(sale.totalDiscount || '');
           setCustomGrandTotal(sale.grandTotal || '');
+          const loadedGst = sale.gstPercent !== undefined ? sale.gstPercent : 18;
+          if (['0', '5', '10', '12', '18', '28'].includes(String(loadedGst))) {
+            setSelectedGstOption(String(loadedGst));
+            setCustomGstRateInput('');
+          } else {
+            setSelectedGstOption('custom');
+            setCustomGstRateInput(String(loadedGst));
+          }
         }
       }).catch(err => alert("Failed to load bill for editing: " + err.message));
     }
@@ -752,8 +773,20 @@ const CustomerBilling = () => {
   const subtotal = items.reduce((sum, i) => sum + i.price * i.qty - i.discount, 0)
   const discountAmt = customDiscount !== '' ? Number(customDiscount) : 0
   
-  const gstPercent = customGstPercent !== '' ? Number(customGstPercent) : 18
-  const gstAmt = billType === 'gst' ? (subtotal - discountAmt) * (gstPercent / 100) : 0
+  const getActiveGstPercent = () => {
+    if (billType === 'non-gst') return 0;
+    if (selectedGstOption === 'custom') {
+      const parsed = parseFloat(customGstRateInput);
+      if (isNaN(parsed) || parsed < 0) return 0;
+      if (parsed > 100) return 100;
+      return parsed;
+    }
+    const parsed = parseFloat(selectedGstOption);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const effectiveGstPercent = getActiveGstPercent();
+  const gstAmt = billType === 'gst' ? (Math.max(0, subtotal - discountAmt) * (effectiveGstPercent / 100)) : 0;
   
   const calculatedGrandTotal = (subtotal - discountAmt) + gstAmt + (Number(warrantySaleAmount) || 0)
   const grandTotal = customGrandTotal !== '' ? Number(customGrandTotal) : calculatedGrandTotal
@@ -857,6 +890,7 @@ const CustomerBilling = () => {
           billType={billType}
           subtotal={subtotal}
           discountAmt={discountAmt}
+          gstPercent={effectiveGstPercent}
           gstAmt={gstAmt}
           grandTotal={grandTotal}
           warrantySaleAmount={warrantySaleAmount}
@@ -1293,10 +1327,65 @@ const CustomerBilling = () => {
                   </div>
                 </div>
                 {billType === 'gst' && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', alignItems: 'center' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>GST (18%)</span>
-                    <span>₹{gstAmt.toFixed(2)}</span>
-                  </div>
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>GST Rate</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <select
+                          className="form-select"
+                          style={{ padding: '2px 8px', fontSize: '13px', height: '28px', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--white)', fontWeight: 600 }}
+                          value={selectedGstOption}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setSelectedGstOption(val);
+                            if (val !== 'custom') {
+                              setCustomGstRateInput('');
+                            }
+                          }}
+                        >
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="10">10%</option>
+                          <option value="12">12%</option>
+                          <option value="18">18%</option>
+                          <option value="28">28%</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {selectedGstOption === 'custom' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Custom GST %</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="any"
+                            style={{ width: '80px', textAlign: 'right', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 4px' }}
+                            placeholder="Enter %"
+                            value={customGstRateInput}
+                            onChange={(e) => {
+                              let val = e.target.value;
+                              if (val !== '') {
+                                const num = parseFloat(val);
+                                if (num < 0) val = '0';
+                                if (num > 100) val = '100';
+                              }
+                              setCustomGstRateInput(val);
+                            }}
+                          />
+                          <span>%</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', alignItems: 'center' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>GST Amount ({effectiveGstPercent}%)</span>
+                      <span>₹{gstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                  </>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '15px', paddingTop: '10px', borderTop: '2px solid var(--border)', alignItems: 'center' }}>
                   <span>Grand Total</span>
