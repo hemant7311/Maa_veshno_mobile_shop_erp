@@ -12,20 +12,23 @@ const Dashboard = () => {
   const [expenseForm, setExpenseForm] = useState({ category: '', amount: '', description: '' })
   const [savingExpense, setSavingExpense] = useState(false)
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false)
-  const [returnForm, setReturnForm] = useState({ imei: '', name: '', variant: '', problem: '', description: '', customerName: '', customerPhone: '' })
-  const [allImeis, setAllImeis] = useState([])
   const [showAllRecords, setShowAllRecords] = useState(false)
   
-  const [totalProfit, setTotalProfit] = useState(0)
-  const [totalCashProfit, setTotalCashProfit] = useState(0)
-  const [totalUpiProfit, setTotalUpiProfit] = useState(0)
   const [dashboardData, setDashboardData] = useState({
+    totalSales: 0,
+    todayTotalSales: 0,
+    totalProfit: 0,
     todayProfit: 0,
     todayExpense: 0,
     todayStockIn: 0,
+    todayReturnsCount: 0,
+    todayReturnsAmount: 0,
+    soldProducts: [],
+    allSales: [],
     returnedProducts: [],
+    allReturnedProducts: [],
     shopExpenses: [],
-    soldProducts: []
+    allExpenses: []
   })
 
   const loadDashboard = useCallback(async () => {
@@ -35,13 +38,14 @@ const Dashboard = () => {
       if (dashRes.data?.success && dashRes.data?.data) {
         const d = dashRes.data.data
         setDashboardData({
-          todayProfit: d.todayProfit || 0,
-          todayExpense: d.todayExpense || 0,
-          todayStockIn: d.todayStockIn || 0,
-          todayCashProfit: d.todayCashProfit || 0,
-          todayUpiProfit: d.todayUpiProfit || 0,
-          todayReturnsCount: d.todayReturnsCount || 0,
-          todayReturnsAmount: d.todayReturnsAmount || 0,
+          totalSales: Number(d.totalSales) || 0,
+          todayTotalSales: Number(d.todayTotalSales) || 0,
+          totalProfit: Number(d.totalProfit) || 0,
+          todayProfit: Number(d.todayProfit) || 0,
+          todayExpense: Number(d.todayExpense) || 0,
+          todayStockIn: Number(d.todayStockIn) || 0,
+          todayReturnsCount: Number(d.todayReturnsCount) || 0,
+          todayReturnsAmount: Number(d.todayReturnsAmount) || 0,
           soldProducts: d.todaySoldProducts || d.soldProducts || [],
           allSales: d.allSales || [],
           returnedProducts: d.returnedProducts || [],
@@ -49,9 +53,6 @@ const Dashboard = () => {
           shopExpenses: d.todayExpenses || d.shopExpenses || [],
           allExpenses: d.allExpenses || []
         })
-        if (d.totalProfit !== undefined) setTotalProfit(d.totalProfit)
-        if (d.totalCashProfit !== undefined) setTotalCashProfit(d.totalCashProfit)
-        if (d.totalUpiProfit !== undefined) setTotalUpiProfit(d.totalUpiProfit)
       }
     } catch (err) {
       console.error('Failed to load dashboard data:', err.message)
@@ -62,20 +63,17 @@ const Dashboard = () => {
     loadDashboard()
   }, [loadDashboard])
 
-  const computedExpense = dashboardData.todayExpense || 0
-  const computedReturn = dashboardData.todayReturnsCount || 0
-  const computedReturnAmount = dashboardData.todayReturnsAmount || 0
-  const computedStockIn = dashboardData.todayStockIn || 0
-  const computedProfit = dashboardData.todayProfit || 0
-  const todayCashProfit = dashboardData.todayCashProfit || 0
-  const todayUpiProfit = dashboardData.todayUpiProfit || 0
-
   const displayedSales = showAllRecords ? (dashboardData.allSales || []) : (dashboardData.soldProducts || [])
   const displayedExpenses = showAllRecords ? (dashboardData.allExpenses || []) : (dashboardData.shopExpenses || [])
   const displayedReturns = showAllRecords ? (dashboardData.allReturnedProducts || []) : (dashboardData.returnedProducts || [])
 
   const computedTotalItems = displayedSales.length
   const computedProductsSold = displayedSales.length
+
+  const todaySalesCount = (dashboardData.soldProducts || []).length
+  const profitMarginPercent = dashboardData.todayTotalSales > 0 
+    ? ((dashboardData.todayProfit / dashboardData.todayTotalSales) * 100).toFixed(2)
+    : '0.00'
 
   const handleAddExpense = async () => {
     if (!expenseForm.amount || !expenseForm.category) {
@@ -101,87 +99,8 @@ const Dashboard = () => {
     }
   }
 
-  const cards = [
-    {
-      label: 'Total Profit',
-      value: `₹${totalProfit.toLocaleString('en-IN')}`,
-      color: 'green',
-      filterValue: 'sales',
-      details: { cash: `₹${totalCashProfit.toLocaleString('en-IN')}`, upi: `₹${totalUpiProfit.toLocaleString('en-IN')}` },
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="1" x2="12" y2="23"/>
-          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-        </svg>
-      )
-    },
-    {
-      label: "Today's Profit",
-      value: `₹${computedProfit.toLocaleString('en-IN')}`,
-      color: 'green',
-      filterValue: 'sales',
-      details: { cash: `₹${todayCashProfit.toLocaleString('en-IN')}`, upi: `₹${todayUpiProfit.toLocaleString('en-IN')}` },
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
-          <polyline points="17 6 23 6 23 12"/>
-        </svg>
-      )
-    },
-    {
-      label: "Today's Shop Expense",
-      value: `₹${computedExpense.toLocaleString('en-IN')}`,
-      color: 'red',
-      filterValue: 'expenses',
-      actionIcon: (
-        <svg onClick={(e) => { e.stopPropagation(); setIsExpenseModalOpen(true); }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-      ),
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/>
-          <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
-          <path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6z"/>
-        </svg>
-      )
-    },
-    {
-      label: "Today's Stock In",
-      value: computedStockIn.toString(),
-      color: 'blue',
-      filterValue: 'sales',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-          <line x1="12" y1="22.08" x2="12" y2="12"/>
-        </svg>
-      )
-    },
-    {
-      label: "Today's Stock Returns",
-      value: `${computedReturn} Items — ₹${computedReturnAmount.toLocaleString('en-IN')}`,
-      color: 'orange',
-      filterValue: 'returns',
-      actionIcon: (
-        <svg onClick={(e) => { e.stopPropagation(); setIsReturnModalOpen(true); }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ cursor: 'pointer' }}>
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-      ),
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M23 4v6h-6"/>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-        </svg>
-      )
-    }
-  ]
-
   return (
-    <div>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '12px' }}>
       {/* Expense Modal */}
       {isExpenseModalOpen && (
         <div className="modal-overlay" onClick={() => setIsExpenseModalOpen(false)}>
@@ -251,149 +170,362 @@ const Dashboard = () => {
       )}
 
       {/* Header */}
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
         <div className="page-header-left">
-          <h1>Dashboard</h1>
-          <p>Welcome back, {user?.name || 'Admin User'}</p>
+          <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Dashboard</h1>
+          <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>Welcome back, {user?.name || 'Maa Veshno Admin'}</p>
         </div>
         <div className="page-header-right">
           <input 
             type="date" 
             className="form-input" 
-            style={{ width: 'auto', background: '#fff' }}
+            style={{ width: 'auto', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '8px', padding: '8px 12px', fontSize: '13px', fontWeight: 600 }}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Grid of Stats Cards */}
-      <div className="stat-cards-grid" style={{ marginBottom: '24px', gridTemplateColumns: 'repeat(5, 1fr)' }}>
-        {cards.map((c, i) => (
-          <div 
-            className="stat-card" 
-            key={i} 
-            onClick={() => setActiveView(c.filterValue || 'sales')}
-            style={{ 
-              display: 'flex', flexDirection: 'column', gap: '12px', cursor: 'pointer',
-              border: activeView === c.filterValue ? `2px solid var(--${c.color})` : '1px solid transparent',
-              transition: 'all 0.2s'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="stat-card-label" style={{ fontWeight: 600, fontSize: '13px' }}>{c.label}</span>
-                {c.actionIcon && (
-                  <div style={{ padding: '4px', background: 'var(--red-light)', color: 'var(--red)', borderRadius: '4px', display: 'flex' }}>
-                    {c.actionIcon}
-                  </div>
-                )}
+      {/* Grid of Combined & Stat Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+        gap: '16px',
+        marginBottom: '24px'
+      }}>
+        {/* COMBINED CARD 1: Total & Today Sales */}
+        <div 
+          onClick={() => setActiveView('sales')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '18px',
+            border: activeView === 'sales' ? '2px solid #3b82f6' : '1px solid #e2e8f0',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            gridColumn: 'span 1'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="20" x2="18" y2="10"/>
+                  <line x1="12" y1="20" x2="12" y2="4"/>
+                  <line x1="6" y1="20" x2="6" y2="14"/>
+                </svg>
               </div>
-              <div className={`stat-card-icon ${c.color}`} style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-sm)' }}>
-                {c.icon}
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>Total &amp; Today Sales</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>All time sales and today's sales</p>
               </div>
             </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '12px', marginBottom: '14px' }}>
               <div>
-                <div className={`stat-card-value ${c.color}`} style={{ fontSize: c.value.length > 14 ? '16px' : c.value.length > 9 ? '20px' : '26px', fontWeight: 700, lineHeight: 1.2, wordBreak: 'break-word' }}>
-                  {c.value}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Total Sales</span>
+                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '10px' }}>All Time</span>
                 </div>
-                {c.details && (
-                  <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <span>Cash: <strong style={{ color: 'var(--text-primary)' }}>{c.details.cash}</strong></span>
-                    <span>Online: <strong style={{ color: 'var(--text-primary)' }}>{c.details.upi}</strong></span>
-                  </div>
-                )}
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563eb', wordBreak: 'break-word' }}>
+                  ₹{dashboardData.totalSales.toLocaleString('en-IN')}
+                </div>
               </div>
+
+              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Today's Sales</span>
+                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '10px' }}>Today</span>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563eb', wordBreak: 'break-word' }}>
+                  ₹{dashboardData.todayTotalSales.toLocaleString('en-IN')}
+                </div>
+              </div>
+            </div>
           </div>
-        ))}
+
+          <div style={{ background: '#eff6ff', padding: '8px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: '#1d4ed8' }}>
+            <span>🛒 {todaySalesCount} Items sold today</span>
+            <span>›</span>
+          </div>
+        </div>
+
+        {/* COMBINED CARD 2: All & Today Profit */}
+        <div 
+          onClick={() => setActiveView('sales')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '18px',
+            border: activeView === 'sales' ? '2px solid #22c55e' : '1px solid #e2e8f0',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            gridColumn: 'span 1'
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+              <div style={{ width: '42px', height: '42px', borderRadius: '12px', background: '#f0fdf4', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                  <polyline points="17 6 23 6 23 12"/>
+                </svg>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: '#0f172a' }}>All &amp; Today Profit</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Net profit after costs &amp; expenses</p>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', background: '#f8fafc', padding: '12px', borderRadius: '12px', marginBottom: '14px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Total Profit</span>
+                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '10px' }}>All Time</span>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: dashboardData.totalProfit < 0 ? '#dc2626' : '#16a34a', wordBreak: 'break-word' }}>
+                  ₹{dashboardData.totalProfit.toLocaleString('en-IN')}
+                </div>
+              </div>
+
+              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Today's Profit</span>
+                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '10px' }}>Today</span>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: dashboardData.todayProfit < 0 ? '#dc2626' : '#16a34a', wordBreak: 'break-word' }}>
+                  ₹{dashboardData.todayProfit.toLocaleString('en-IN')}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: '#f0fdf4', padding: '8px 12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11px', fontWeight: 600, color: '#15803d' }}>
+            <span>💰 Profit margin: {profitMarginPercent}%</span>
+            <span>›</span>
+          </div>
+        </div>
+
+        {/* COMPACT CARD 3: Today's Shop Expense */}
+        <div 
+          onClick={() => setActiveView('expenses')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '18px',
+            border: activeView === 'expenses' ? '2px solid #ef4444' : '1px solid #e2e8f0',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/>
+                <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
+                <path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6z"/>
+              </svg>
+            </div>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsExpenseModalOpen(true); }}
+              style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              title="Add Expense"
+            >
+              +
+            </button>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>Today's Shop Expense</div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: '#dc2626', wordBreak: 'break-word' }}>
+              ₹{dashboardData.todayExpense.toLocaleString('en-IN')}
+            </div>
+          </div>
+        </div>
+
+        {/* COMPACT CARD 4: Today's Stock In */}
+        <div 
+          onClick={() => setActiveView('sales')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '18px',
+            border: activeView === 'sales' ? '2px solid #2563eb' : '1px solid #e2e8f0',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>Today's Stock In</div>
+            <div style={{ fontSize: '22px', fontWeight: 800, color: '#2563eb', wordBreak: 'break-word' }}>
+              {dashboardData.todayStockIn}
+            </div>
+          </div>
+        </div>
+
+        {/* COMPACT CARD 5: Today's Stock Returns */}
+        <div 
+          onClick={() => setActiveView('returns')}
+          style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            padding: '18px',
+            border: activeView === 'returns' ? '2px solid #f97316' : '1px solid #e2e8f0',
+            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
+            display: 'flex',
+            flexDirection: 'column',
+            justify: 'space-between',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#fff7ed', color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 4v6h-6"/>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+              </svg>
+            </div>
+            <button 
+              onClick={(e) => { e.stopPropagation(); setIsReturnModalOpen(true); }}
+              style={{ background: '#fff7ed', color: '#f97316', border: 'none', borderRadius: '8px', padding: '6px 10px', fontSize: '14px', fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              title="Add Return"
+            >
+              +
+            </button>
+          </div>
+
+          <div>
+            <div style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', marginBottom: '6px' }}>Today's Stock Returns</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: '#ea580c', wordBreak: 'break-word' }}>
+              {dashboardData.todayReturnsCount} Items — ₹{dashboardData.todayReturnsAmount.toLocaleString('en-IN')}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Table Section */}
-      <div className="card">
-        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 20px' }}>
-            <span className="card-title" style={{ fontSize: '15px', fontWeight: 700 }}>
-              {activeView === 'sales' ? "Today's Sold Products Details" : activeView === 'expenses' ? "Today's Shop Expenses" : "Today's Stock Returns"}
-            </span>
+      <div className="card" style={{ borderRadius: '16px', border: '1px solid #e2e8f0', overflow: 'hidden', background: '#fff' }}>
+        <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: '1px solid #e2e8f0', background: '#ffffff' }}>
+          <span className="card-title" style={{ fontSize: '16px', fontWeight: 700, color: '#0f172a' }}>
+            {activeView === 'sales' ? "Today's Sold Products Details" : activeView === 'expenses' ? "Today's Shop Expenses" : "Today's Stock Returns"}
+          </span>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button onClick={() => setShowAllRecords(!showAllRecords)} className={`btn btn-sm ${showAllRecords ? 'btn-outline' : 'btn-primary'}`} style={{ padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px' }}>
+            <button 
+              onClick={() => setShowAllRecords(!showAllRecords)} 
+              className="btn btn-sm btn-primary" 
+              style={{ padding: '6px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600 }}
+            >
               {showAllRecords ? 'View Today' : 'View All'}
             </button>
           </div>
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table className="data-table">
+          <table className="data-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               {activeView === 'sales' ? (
-                <tr>
-                  <th style={{ width: '110px' }}>Invoice</th>
-                  <th>Customer</th>
-                  <th>Products</th>
-                  <th style={{ textAlign: 'center' }}>Mode</th>
-                  <th style={{ textAlign: 'right' }}>Amount</th>
-                  <th style={{ textAlign: 'right' }}>Date</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ width: '110px', padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Invoice</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Customer</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Products</th>
+                  <th style={{ textAlign: 'center', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Mode</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Amount</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Date</th>
                 </tr>
               ) : activeView === 'expenses' ? (
-                <tr>
-                  <th style={{ width: '60px' }}>#</th>
-                  <th>Category</th>
-                  <th>Description</th>
-                  <th style={{ textAlign: 'right' }}>Amount</th>
-                  <th style={{ textAlign: 'right' }}>Time</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ width: '60px', padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>#</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Category</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Description</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Amount</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Time</th>
                 </tr>
               ) : (
-                <tr>
-                  <th style={{ width: '50px' }}>#</th>
-                  <th>Product Name</th>
-                  <th>Brand</th>
-                  <th>Variant</th>
-                  <th>IMEI Number</th>
-                  <th style={{ textAlign: 'right' }}>Price (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Date</th>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                  <th style={{ width: '50px', padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>#</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Product Name</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Brand</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Variant</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>IMEI Number</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Price (₹)</th>
+                  <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 700, color: '#64748b' }}>Date</th>
                 </tr>
               )}
             </thead>
             <tbody>
               {activeView === 'sales' ? (
-                displayedSales.map((p, index) => (
-                  <tr key={p.id || index}>
-                    <td style={{ color: 'var(--text-muted)' }}>{p.id}</td>
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{p.customer || p.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>{p.phone || 'Retail'}</div>
+                displayedSales.length === 0 ? (
+                  <tr><td colSpan="6" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>No sales found for this date</td></tr>
+                ) : displayedSales.map((p, index) => (
+                  <tr key={p.id || index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '13px' }}>{p.id}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>{p.customer || p.name}</div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>{p.phone || 'Retail'}</div>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{p.products || p.variant}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 600, color: 'var(--text-primary)', textTransform: 'uppercase' }}>{p.mode || p.paymentMethod || '-'}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>₹{(p.amount || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                    <td style={{ padding: '12px 16px', color: '#334155', fontSize: '13px' }}>{p.products || p.variant}</td>
+                    <td style={{ textAlign: 'center', padding: '12px 16px', fontWeight: 700, color: '#0f172a', textTransform: 'uppercase', fontSize: '12px' }}>{p.mode || p.paymentMethod || '-'}</td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700, color: '#2563eb', fontSize: '14px' }}>₹{(p.amount || 0).toLocaleString('en-IN')}</td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', color: '#64748b', fontFamily: 'monospace', fontSize: '12px' }}>
                       {p.date ? (p.date.includes('T') ? new Date(p.date).toLocaleDateString('en-IN') : p.date) : p.time}
                     </td>
                   </tr>
                 ))
               ) : activeView === 'expenses' ? (
-                displayedExpenses.map((e, index) => (
-                  <tr key={e.id || index}>
-                    <td style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{e.category}</div>
+                displayedExpenses.length === 0 ? (
+                  <tr><td colSpan="5" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>No expenses found for this date</td></tr>
+                ) : displayedExpenses.map((e, index) => (
+                  <tr key={e.id || index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '13px' }}>{index + 1}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>{e.category}</div>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{e.description || '-'}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--red)' }}>₹{(e.amount || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{e.time || e.date}</td>
+                    <td style={{ padding: '12px 16px', color: '#334155', fontSize: '13px' }}>{e.description || '-'}</td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700, color: '#dc2626', fontSize: '14px' }}>₹{(e.amount || 0).toLocaleString('en-IN')}</td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', color: '#64748b', fontFamily: 'monospace', fontSize: '12px' }}>{e.time || e.date}</td>
                   </tr>
                 ))
               ) : (
-                displayedReturns.map((r, index) => (
-                  <tr key={r.id || index}>
-                    <td style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{r.name}</div>
+                displayedReturns.length === 0 ? (
+                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>No returns found for this date</td></tr>
+                ) : displayedReturns.map((r, index) => (
+                  <tr key={r.id || index} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                    <td style={{ padding: '12px 16px', color: '#64748b', fontSize: '13px' }}>{index + 1}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <div style={{ fontWeight: 600, color: '#0f172a', fontSize: '13px' }}>{r.name}</div>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{r.brand || '—'}</td>
-                    <td style={{ color: 'var(--text-secondary)' }}>{r.variant || '—'}</td>
-                    <td style={{ color: 'var(--primary)', fontFamily: 'monospace', fontSize: '12px', fontWeight: 600 }}>{r.imei || '—'}</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--danger)' }}>₹{(r.price || 0).toLocaleString('en-IN')}</td>
-                    <td style={{ textAlign: 'right', color: 'var(--text-secondary)', fontSize: '12px' }}>{r.date || '—'}</td>
+                    <td style={{ padding: '12px 16px', color: '#334155', fontSize: '13px' }}>{r.brand || '—'}</td>
+                    <td style={{ padding: '12px 16px', color: '#334155', fontSize: '13px' }}>{r.variant || '—'}</td>
+                    <td style={{ padding: '12px 16px', color: '#2563eb', fontFamily: 'monospace', fontSize: '12px', fontWeight: 600 }}>{r.imei || '—'}</td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', fontWeight: 700, color: '#dc2626', fontSize: '14px' }}>₹{(r.price || 0).toLocaleString('en-IN')}</td>
+                    <td style={{ textAlign: 'right', padding: '12px 16px', color: '#64748b', fontSize: '12px' }}>{r.date || '—'}</td>
                   </tr>
                 ))
               )}
@@ -403,15 +535,15 @@ const Dashboard = () => {
 
         {/* Footer Summary Bar */}
         {activeView === 'sales' && (
-          <div style={{ padding: '16px 20px', borderTop: '2px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg)', borderBottomLeftRadius: 'var(--radius-md)', borderBottomRightRadius: 'var(--radius-md)' }}>
-            <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '13px' }}>
+          <div style={{ padding: '16px 20px', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+            <span style={{ fontWeight: 700, color: '#334155', fontSize: '13px' }}>
               Total Items: {computedTotalItems}
             </span>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-              <span style={{ fontWeight: 700, color: 'var(--text-secondary)', fontSize: '13px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <span style={{ fontWeight: 700, color: '#64748b', fontSize: '13px' }}>
                 Total Products Sold:
               </span>
-              <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>
+              <span style={{ fontSize: '28px', fontWeight: 800, color: '#2563eb', lineHeight: 1 }}>
                 {computedProductsSold}
               </span>
             </div>
