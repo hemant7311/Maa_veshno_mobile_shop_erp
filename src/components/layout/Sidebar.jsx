@@ -55,6 +55,7 @@ const Sidebar = ({ isOpen }) => {
           <div className="sidebar-section">
             <div className="sidebar-section-label">MAIN</div>
             <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
+            <SidebarLink to="/billing/customer" icon={Receipt} label="Billing" />
           </div>
         )}
 
@@ -79,13 +80,6 @@ const Sidebar = ({ isOpen }) => {
                 <SidebarLink to="/purchases" icon={ShoppingCart} label="Purchases" />
               </>
             )}
-          </div>
-        )}
-
-        {hasAccess('dashboard') && (
-          <div className="sidebar-section">
-            <div className="sidebar-section-label">BILLING</div>
-            <SidebarLink to="/billing/customer" icon={Receipt} label="Billing" />
           </div>
         )}
 

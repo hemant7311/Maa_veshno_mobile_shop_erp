@@ -1,7 +1,10 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const MobileBottomNav = ({ onMoreClick }) => {
+  const location = useLocation();
+  const isBillingActive = location.pathname.startsWith('/billing');
+
   return (
     <div className="mobile-bottom-nav">
       <NavLink to="/dashboard">
@@ -11,22 +14,24 @@ const MobileBottomNav = ({ onMoreClick }) => {
         </svg>
         Dashboard
       </NavLink>
+      <NavLink
+        to="/billing/customer"
+        className={({ isActive }) => (isActive || isBillingActive ? 'active' : '')}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1Z"/>
+          <path d="M16 8h-6"/>
+          <path d="M16 12h-6"/>
+          <path d="M13 16h-3"/>
+        </svg>
+        Billing
+      </NavLink>
       <NavLink to="/products">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <rect width="20" height="14" x="2" y="7" rx="2" ry="2"/>
           <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
         </svg>
         Products
-      </NavLink>
-      <NavLink to="/imei">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
-          <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
-          <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
-          <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
-          <rect width="10" height="10" x="7" y="7" rx="1"/>
-        </svg>
-        IMEI
       </NavLink>
       <NavLink to="/customers">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

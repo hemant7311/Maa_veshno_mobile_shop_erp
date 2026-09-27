@@ -83,6 +83,7 @@ const AppRouter = () => {
               <Route path="/customers" element={<Customers />} />
               <Route path="/buyers" element={<Buyers />} />
               <Route path="/suppliers" element={<Suppliers />} />
+              <Route path="/billing" element={<Navigate to="/billing/customer" replace />} />
               <Route path="/billing/customer" element={<CustomerBilling />} />
               <Route path="/billing/buyer" element={<BuyerBilling />} />
               <Route path="/finance" element={<Finance />} />
