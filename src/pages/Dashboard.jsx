@@ -107,7 +107,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '8px' : '16px' }}>
+    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '4px 4px' : '16px' }}>
       {/* Expense Modal */}
       {isExpenseModalOpen && (
         <div className="modal-overlay" onClick={() => setIsExpenseModalOpen(false)}>
@@ -176,80 +176,80 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Header */}
-      <div className="page-header" style={{ marginBottom: isMobile ? '12px' : '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+      {/* Header - EXACT SAME ROW ON MOBILE MATCHING IMAGE 2 */}
+      <div className="page-header" style={{ marginBottom: isMobile ? '10px' : '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
         <div className="page-header-left">
-          <h1 style={{ fontSize: isMobile ? '20px' : '24px', fontWeight: 800, margin: 0 }}>Dashboard</h1>
-          <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: isMobile ? '11px' : '13px' }}>Welcome back, {user?.name || 'Maa Veshno Admin'}</p>
+          <h1 style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: 800, margin: 0, color: '#0f172a' }}>Dashboard</h1>
+          <p style={{ margin: '1px 0 0', color: '#64748b', fontSize: isMobile ? '10px' : '13px' }}>Welcome back, {user?.name || 'Maa Veshno Admin'}</p>
         </div>
-        <div className="page-header-right">
+        <div className="page-header-right" style={{ flexShrink: 0 }}>
           <input 
             type="date" 
             className="form-input" 
-            style={{ width: 'auto', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '6px 12px', fontSize: '13px', fontWeight: 600 }}
+            style={{ width: 'auto', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '10px', padding: isMobile ? '4px 8px' : '6px 12px', fontSize: isMobile ? '11px' : '13px', fontWeight: 600 }}
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
         </div>
       </div>
 
-      {/* MOBILE DASHBOARD VIEW (< 768px) - MATCHING SCREENSHOT EXACTLY */}
+      {/* MOBILE DASHBOARD VIEW (< 768px) - MATCHING SCREENSHOT EXACTLY WITH 2PX REDUCED FONTS & LESS PADDING */}
       {isMobile ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* COMBINED CARD 1: Total & Today Sales */}
           <div 
             onClick={() => setActiveView('sales')}
             style={{
               background: '#f4f8ff',
-              borderRadius: '20px',
-              padding: '16px',
+              borderRadius: '16px',
+              padding: '12px 14px',
               border: activeView === 'sales' ? '2px solid #3b82f6' : '1.5px solid #dbeafe',
               boxShadow: '0 2px 8px rgba(37,99,235,0.05)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px',
+              gap: '10px',
               cursor: 'pointer'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="20" x2="18" y2="10"/>
                   <line x1="12" y1="20" x2="12" y2="4"/>
                   <line x1="6" y1="20" x2="6" y2="14"/>
                 </svg>
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>Total &amp; Today Sales</h3>
-                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>All time sales and today's sales</p>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>Total &amp; Today Sales</h3>
+                <p style={{ margin: '1px 0 0', fontSize: '9px', color: '#64748b' }}>All time sales and today's sales</p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#ffffff', padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: '#ffffff', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Total Sales</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '10px' }}>All Time</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Total Sales</span>
+                  <span style={{ fontSize: '8px', fontWeight: 700, background: '#dbeafe', color: '#1e40af', padding: '1px 5px', borderRadius: '8px' }}>All Time</span>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563eb' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#2563eb' }}>
                   ₹{dashboardData.totalSales.toLocaleString('en-IN')}
                 </div>
               </div>
 
-              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Today's Sales</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '10px' }}>Today</span>
+              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Today's Sales</span>
+                  <span style={{ fontSize: '8px', fontWeight: 700, background: '#dbeafe', color: '#1e40af', padding: '1px 5px', borderRadius: '8px' }}>Today</span>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: '#2563eb' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#2563eb' }}>
                   ₹{dashboardData.todayTotalSales.toLocaleString('en-IN')}
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#e0edff', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#1d4ed8' }}>
+            <div style={{ background: '#e0edff', padding: '8px 12px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', fontWeight: 700, color: '#1d4ed8' }}>
               <span>🛒 {todaySalesCount} Items sold today</span>
-              <span style={{ fontSize: '14px' }}>›</span>
+              <span style={{ fontSize: '12px' }}>›</span>
             </div>
           </div>
 
@@ -258,83 +258,83 @@ const Dashboard = () => {
             onClick={() => setActiveView('sales')}
             style={{
               background: '#f0fdf4',
-              borderRadius: '20px',
-              padding: '16px',
+              borderRadius: '16px',
+              padding: '12px 14px',
               border: activeView === 'sales' ? '2px solid #22c55e' : '1.5px solid #dcfce7',
               boxShadow: '0 2px 8px rgba(34,197,94,0.05)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px',
+              gap: '10px',
               cursor: 'pointer'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: '#dcfce7', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#dcfce7', color: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
                   <polyline points="17 6 23 6 23 12"/>
                 </svg>
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>All &amp; Today Profit</h3>
-                <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#64748b' }}>Net profit after deducting costs &amp; expenses</p>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>All &amp; Today Profit</h3>
+                <p style={{ margin: '1px 0 0', fontSize: '9px', color: '#64748b' }}>Net profit after costs &amp; expenses</p>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', background: '#ffffff', padding: '12px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', background: '#ffffff', padding: '10px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Total Profit</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '10px' }}>All Time</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Total Profit</span>
+                  <span style={{ fontSize: '8px', fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '1px 5px', borderRadius: '8px' }}>All Time</span>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: dashboardData.totalProfit < 0 ? '#dc2626' : '#16a34a' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: dashboardData.totalProfit < 0 ? '#dc2626' : '#16a34a' }}>
                   ₹{dashboardData.totalProfit.toLocaleString('en-IN')}
                 </div>
               </div>
 
-              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '10px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Today's Profit</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '1px 6px', borderRadius: '10px' }}>Today</span>
+              <div style={{ borderLeft: '1px solid #e2e8f0', paddingLeft: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '2px' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Today's Profit</span>
+                  <span style={{ fontSize: '8px', fontWeight: 700, background: '#dcfce7', color: '#166534', padding: '1px 5px', borderRadius: '8px' }}>Today</span>
                 </div>
-                <div style={{ fontSize: '18px', fontWeight: 800, color: dashboardData.todayProfit < 0 ? '#dc2626' : '#16a34a' }}>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: dashboardData.todayProfit < 0 ? '#dc2626' : '#16a34a' }}>
                   ₹{dashboardData.todayProfit.toLocaleString('en-IN')}
                 </div>
               </div>
             </div>
 
-            <div style={{ background: '#dcfce7', padding: '10px 14px', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', fontWeight: 700, color: '#15803d' }}>
+            <div style={{ background: '#dcfce7', padding: '8px 12px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '10px', fontWeight: 700, color: '#15803d' }}>
               <span>💰 Profit margin: {profitMarginPercent}%</span>
-              <span style={{ fontSize: '14px' }}>›</span>
+              <span style={{ fontSize: '12px' }}>›</span>
             </div>
           </div>
 
           {/* COMPACT CARDS ROW 1: Shop Expense & Stock In (2 columns) */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             {/* Shop Expense */}
             <div 
               onClick={() => setActiveView('expenses')}
               style={{
                 background: '#fff5f5',
                 border: activeView === 'expenses' ? '2px solid #ef4444' : '1px solid #fee2e2',
-                borderRadius: '16px',
-                padding: '12px 14px',
+                borderRadius: '14px',
+                padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 cursor: 'pointer'
               }}
             >
-              <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#fee2e2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M20 12V8H6a2 2 0 0 1-2-2c0-1.1.9-2 2-2h12v4"/>
                   <path d="M4 6v12c0 1.1.9 2 2 2h14v-4"/>
                   <path d="M18 12a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4v-6z"/>
                 </svg>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Shop Expense</div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>
+                <div style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Shop Expense</div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#dc2626' }}>
                   ₹{dashboardData.todayExpense.toLocaleString('en-IN')}
                 </div>
               </div>
@@ -346,24 +346,24 @@ const Dashboard = () => {
               style={{
                 background: '#f4f8ff',
                 border: activeView === 'sales' ? '2px solid #2563eb' : '1px solid #dbeafe',
-                borderRadius: '16px',
-                padding: '12px 14px',
+                borderRadius: '14px',
+                padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
+                gap: '8px',
                 cursor: 'pointer'
               }}
             >
-              <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#dbeafe', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                   <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
                   <line x1="12" y1="22.08" x2="12" y2="12"/>
                 </svg>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Stock In</div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#2563eb' }}>
+                <div style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Stock In</div>
+                <div style={{ fontSize: '14px', fontWeight: 800, color: '#2563eb' }}>
                   {dashboardData.todayStockIn}
                 </div>
               </div>
@@ -376,37 +376,37 @@ const Dashboard = () => {
             style={{
               background: '#fff7ed',
               border: activeView === 'returns' ? '2px solid #f97316' : '1px solid #ffedd5',
-              borderRadius: '16px',
-              padding: '12px 14px',
+              borderRadius: '14px',
+              padding: '10px 12px',
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
+              gap: '10px',
               cursor: 'pointer'
             }}
           >
-            <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: '#ffedd5', color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#ffedd5', color: '#f97316', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 4v6h-6"/>
                 <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
               </svg>
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#64748b' }}>Stock Returns</div>
-              <div style={{ fontSize: '16px', fontWeight: 800, color: '#ea580c' }}>
+              <div style={{ fontSize: '9px', fontWeight: 600, color: '#64748b' }}>Stock Returns</div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#ea580c' }}>
                 {dashboardData.todayReturnsCount} Items — ₹{dashboardData.todayReturnsAmount.toLocaleString('en-IN')}
               </div>
             </div>
           </div>
 
           {/* MOBILE LIST VIEW SECTION */}
-          <div style={{ borderRadius: '20px', border: '1px solid #e2e8f0', background: '#ffffff', overflow: 'hidden', marginTop: '4px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '1px solid #f1f5f9' }}>
-              <span style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a' }}>
+          <div style={{ borderRadius: '16px', border: '1px solid #e2e8f0', background: '#ffffff', overflow: 'hidden', marginTop: '2px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderBottom: '1px solid #f1f5f9' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a' }}>
                 {activeView === 'sales' ? "Today's Sold Products" : activeView === 'expenses' ? "Today's Shop Expenses" : "Today's Stock Returns"}
               </span>
               <button 
                 onClick={() => setShowAllRecords(!showAllRecords)} 
-                style={{ background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '8px', padding: '6px 14px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '4px 10px', fontSize: '10px', fontWeight: 700, cursor: 'pointer' }}
               >
                 {showAllRecords ? 'View Today' : 'View All'}
               </button>
@@ -415,65 +415,65 @@ const Dashboard = () => {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {activeView === 'sales' ? (
                 displayedSales.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>No sales found for this date</div>
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '11px' }}>No sales found for this date</div>
                 ) : (
                   displayedSales.map((p, index) => (
-                    <div key={p.id || index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid #f1f5f9' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, width: '26px' }}>#{p.id || index + 1}</span>
-                        <div>
-                          <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>{p.customer || p.name}</div>
-                          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>{p.phone || 'Retail'}</div>
-                        </div>
-                      </div>
-
+                    <div key={p.id || index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontSize: '11px', color: '#475569', background: '#f1f5f9', padding: '2px 6px', borderRadius: '6px' }}>{p.products || 'Item'}</span>
-                        <span style={{ fontSize: '11px', fontWeight: 800, color: '#0f172a' }}>{(p.mode || 'CASH').toUpperCase()}</span>
+                        <span style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600, width: '22px' }}>#{p.id || index + 1}</span>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '11px', color: '#0f172a' }}>{p.customer || p.name}</div>
+                          <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '1px' }}>{p.phone || 'Retail'}</div>
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontSize: '9px', color: '#475569', background: '#f1f5f9', padding: '2px 5px', borderRadius: '4px' }}>{p.products || 'Item'}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 800, color: '#0f172a' }}>{(p.mode || 'CASH').toUpperCase()}</span>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#2563eb' }}>₹{(p.amount || 0).toLocaleString('en-IN')}</div>
-                          <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 800, color: '#2563eb' }}>₹{(p.amount || 0).toLocaleString('en-IN')}</div>
+                          <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '1px' }}>
                             {p.date ? (p.date.includes('T') ? new Date(p.date).toLocaleDateString('en-IN') : p.date) : p.time}
                           </div>
                         </div>
-                        <span style={{ color: '#2563eb', fontWeight: 800, fontSize: '14px' }}>›</span>
+                        <span style={{ color: '#2563eb', fontWeight: 800, fontSize: '12px' }}>›</span>
                       </div>
                     </div>
                   ))
                 )
               ) : activeView === 'expenses' ? (
                 displayedExpenses.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>No expenses found for this date</div>
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '11px' }}>No expenses found for this date</div>
                 ) : (
                   displayedExpenses.map((e, index) => (
-                    <div key={e.id || index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div key={e.id || index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>{e.category}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b', marginTop: '1px' }}>{e.description || '-'}</div>
+                        <div style={{ fontWeight: 700, fontSize: '11px', color: '#0f172a' }}>{e.category}</div>
+                        <div style={{ fontSize: '9px', color: '#64748b', marginTop: '1px' }}>{e.description || '-'}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#dc2626' }}>₹{(e.amount || 0).toLocaleString('en-IN')}</div>
-                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>{e.time || e.date}</div>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#dc2626' }}>₹{(e.amount || 0).toLocaleString('en-IN')}</div>
+                        <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '1px' }}>{e.time || e.date}</div>
                       </div>
                     </div>
                   ))
                 )
               ) : (
                 displayedReturns.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '24px', color: '#94a3b8', fontSize: '13px' }}>No returns found for this date</div>
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#94a3b8', fontSize: '11px' }}>No returns found for this date</div>
                 ) : (
                   displayedReturns.map((r, index) => (
-                    <div key={r.id || index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid #f1f5f9' }}>
+                    <div key={r.id || index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', borderBottom: '1px solid #f1f5f9' }}>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '13px', color: '#0f172a' }}>{r.name}</div>
-                        <div style={{ fontSize: '10px', color: '#2563eb', fontFamily: 'monospace', marginTop: '1px' }}>{r.imei || '—'}</div>
+                        <div style={{ fontWeight: 700, fontSize: '11px', color: '#0f172a' }}>{r.name}</div>
+                        <div style={{ fontSize: '9px', color: '#2563eb', fontFamily: 'monospace', marginTop: '1px' }}>{r.imei || '—'}</div>
                       </div>
                       <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: '#dc2626' }}>₹{(r.price || 0).toLocaleString('en-IN')}</div>
-                        <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '1px' }}>{r.date || '—'}</div>
+                        <div style={{ fontSize: '12px', fontWeight: 800, color: '#dc2626' }}>₹{(r.price || 0).toLocaleString('en-IN')}</div>
+                        <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '1px' }}>{r.date || '—'}</div>
                       </div>
                     </div>
                   ))
@@ -482,11 +482,11 @@ const Dashboard = () => {
             </div>
 
             {activeView === 'sales' && (
-              <div style={{ background: '#eff6ff', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#0f172a' }}>Total Items: {computedTotalItems}</span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '12px', color: '#64748b' }}>Total Sold:</span>
-                  <span style={{ fontSize: '20px', fontWeight: 900, color: '#2563eb' }}>{computedProductsSold}</span>
+              <div style={{ background: '#eff6ff', padding: '10px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, color: '#0f172a' }}>Total Items: {computedTotalItems}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '10px', color: '#64748b' }}>Total Sold:</span>
+                  <span style={{ fontSize: '18px', fontWeight: 900, color: '#2563eb' }}>{computedProductsSold}</span>
                 </div>
               </div>
             )}
@@ -620,7 +620,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* DESKTOP VERTICAL COMPACT CARD 3: Today's Shop Expense (MATCHING IMAGE 4 EXACTLY) */}
+            {/* DESKTOP VERTICAL COMPACT CARD 3: Today's Shop Expense */}
             <div 
               onClick={() => setActiveView('expenses')}
               style={{
@@ -664,14 +664,14 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* DESKTOP VERTICAL COMPACT CARD 4: Today's Stock In (MATCHING IMAGE 4 WITH BLUE BORDER OUTLINE) */}
+            {/* DESKTOP VERTICAL COMPACT CARD 4: Today's Stock In */}
             <div 
               onClick={() => setActiveView('sales')}
               style={{
                 background: '#ffffff',
                 borderRadius: '20px',
                 padding: '18px',
-                border: '2px solid #2563eb', // Blue border outline as shown in Image 4
+                border: '2px solid #2563eb',
                 boxShadow: '0 2px 12px rgba(37,99,235,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -701,7 +701,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* DESKTOP VERTICAL COMPACT CARD 5: Today's Stock Returns (MATCHING IMAGE 4 EXACTLY) */}
+            {/* DESKTOP VERTICAL COMPACT CARD 5: Today's Stock Returns */}
             <div 
               onClick={() => setActiveView('returns')}
               style={{
