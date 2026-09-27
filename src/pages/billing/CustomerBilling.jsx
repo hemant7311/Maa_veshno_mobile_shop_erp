@@ -194,9 +194,11 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
   )
 }
 
-const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstPercent = 18, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, onClose }) => {
+const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstPercent = 18, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, billStatus = 'saved', onClose }) => {
   const [isSaving, setIsSaving] = useState(false)
+  const [isSavingDraft, setIsSavingDraft] = useState(false)
   const [currentInvoiceNo, setCurrentInvoiceNo] = useState(existingInvoiceNo || '')
+  const [currentBillStatus, setCurrentBillStatus] = useState(billStatus || 'saved')
   const safeNum = (v) => (isNaN(v) || v == null ? 0 : Number(v));
     const safeSubtotal = safeNum(subtotal);
     const safeDiscount = safeNum(discountAmt);
@@ -211,6 +213,125 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
   const emiDayOnly = finance.emiPayDate ? new Date(finance.emiPayDate).getDate() : ''
   const emiMethodLabel = finance.emiPaymentMethod === 'bank' ? 'Auto bank deduction' : 'Will come to shop'
   const downPaymentModeLabel = downPaymentMode.length > 0 ? downPaymentMode.join(', ').toUpperCase() : 'Cash'
+
+  
+  const handleSaveDraft = async () => {
+    if (items.length === 0) {
+      alert('Please add at least one product before saving a draft.')
+      return
+    }
+    const duplicateImeis = items
+      .map(i => i.imei)
+      .filter(imei => imei && imei !== 'N/A' && imei.trim() !== '')
+      .filter((imei, idx, self) => self.findIndex(t => t.toLowerCase() === imei.toLowerCase()) !== idx);
+    if (duplicateImeis.length > 0) {
+      alert(`Cannot save draft: Duplicate IMEI numbers in sale items list (${[...new Set(duplicateImeis)].join(', ')})`);
+      return;
+    }
+    if (!customer.name || !customer.mobile) {
+      alert('Please enter Customer Name and Mobile No.')
+      return
+    }
+    if (!isValidMobile(customer.mobile.trim())) {
+      alert('Mobile number must be exactly 10 digits.')
+      return
+    }
+    for (const item of items) {
+      if (item.imei && item.imei !== 'N/A' && item.imei.trim() !== '') {
+        if (!isValidIMEI(item.imei.trim())) {
+          alert(`IMEI "${item.imei}" is invalid. IMEI must be exactly 15 digits.`)
+          return
+        }
+      }
+    }
+
+    try {
+      setIsSavingDraft(true)
+      const salePayload = {
+        invoiceNumber: existingInvoiceNo || undefined,
+        customerName: customer.name,
+        phone: customer.mobile,
+        address: customer.address,
+        partyGst: customer.partyGst,
+        amountPaid: customer.amountPaidNow ? Number(customer.amountPaidNow) : 0,
+        promisedDays: customer.promisedDays ? Number(customer.promisedDays) : undefined,
+        saleType: customerType,
+        paymentMode: payMode[0] || 'cash',
+        subTotal: subtotal,
+        totalDiscount: discountAmt,
+        gstPercent: billType === 'gst' ? safeGstPercent : 0,
+        totalTax: gstAmt,
+        warrantySaleAmount: Number(warrantySaleAmount) || 0,
+        grandTotal: grandTotal,
+        isDraft: true,
+        billStatus: 'draft',
+        items: items.map(i => ({
+          productId: i.productId || null, 
+          productName: i.product,
+          imei: i.imei,
+          qty: i.qty,
+          price: i.price,
+          purchasePrice: i.purchasePrice !== undefined ? Number(i.purchasePrice) : undefined,
+          discount: i.discount,
+          tax: 0,
+          total: (i.price * i.qty) - i.discount
+        })),
+        financeDetails: payMode.includes('finance') ? {
+          company: financeType === 'company' ? finance.company : finance.privateFinancier,
+          loanId: finance.loanId,
+          dpAmount: Number(finance.downPayment) || 0,
+          emiAmount: Number(finance.emi) || 0,
+          tenure: finance.tenure,
+          emiStartAfterMonths: Number(finance.emiStartAfterMonths) || 1,
+          emiPayDate: finance.emiPayDate,
+          fileNo: finance.fileNo,
+          emiPaymentMethod: finance.emiPaymentMethod
+        } : undefined
+      }
+
+      let res;
+      if (editingSaleId) {
+         res = await api.put(`/sales/${editingSaleId}`, salePayload);
+      } else {
+         res = await api.post('/sales', salePayload);
+      }
+
+      const savedSale = res.data?.data
+      const generatedInv = savedSale?.invoiceNumber || res.data?.invoiceNumber
+      if (generatedInv) {
+        setCurrentInvoiceNo(generatedInv)
+        if (setExistingInvoiceNo) {
+          setExistingInvoiceNo(generatedInv)
+        }
+      }
+      setCurrentBillStatus('draft')
+
+      // Wait for React DOM re-render of #print-area
+      await new Promise(resolve => setTimeout(resolve, 150))
+
+      if (savedSale && savedSale._id) {
+        try {
+          const printEl = document.getElementById('print-area')
+          if (printEl) {
+            const canvas = await html2canvas(printEl, { scale: 2, useCORS: true, logging: false })
+            const imgData = canvas.toDataURL('image/png')
+            await api.post(`/sales/${savedSale._id}/bill-image`, { billImageUrl: imgData })
+          }
+        } catch (imgErr) {
+          console.warn('Failed to upload draft bill snapshot:', imgErr)
+        }
+      }
+
+      setIsSavingDraft(false)
+      alert(`Draft Bill ${generatedInv || ''} saved successfully.`)
+      onClose()
+      window.location.reload()
+    } catch (error) {
+      setIsSavingDraft(false)
+      console.error('Failed to save draft', error)
+      alert('Failed to save draft: ' + (error.response?.data?.message || error.message))
+    }
+  }
 
   const handleSave = async (shouldPrint) => {
     if (items.length === 0) {
@@ -340,8 +461,9 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
           <div className="modal-header" style={{ background: 'var(--white)' }}>
             <h2 className="modal-title">Wholesale Invoice</h2>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button className="btn btn-success" onClick={() => handleSave(false)} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Bill'}</button>
-<button className="btn btn-primary" onClick={() => handleSave(true)} disabled={isSaving}>{isSaving ? 'Saving...' : '🖨️  Save & Print'}</button>
+              <button className="btn" style={{ background: '#f59e0b', color: '#ffffff', border: '1px solid #d97706', fontWeight: 600 }} onClick={() => handleSaveDraft()} disabled={isSaving || isSavingDraft}>{isSavingDraft ? 'Saving Draft...' : 'Save Draft'}</button>
+              <button className="btn btn-success" onClick={() => handleSave(false)} disabled={isSaving || isSavingDraft}>{isSaving ? 'Saving...' : 'Save Bill'}</button>
+              <button className="btn btn-primary" onClick={() => handleSave(true)} disabled={isSaving || isSavingDraft}>{isSaving ? 'Saving...' : '🖨️  Save & Print'}</button>
               <button className="btn btn-outline" onClick={onClose}>Close</button>
             </div>
           </div>
@@ -350,7 +472,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
             <div id="print-area" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', background: '#fff', padding: '20px', border: '2px solid #1e3a8a', borderRadius: '8px' }}>
               {/* Header */}
               <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'inline-block', background: '#1e3a8a', color: '#fff', fontWeight: 'bold', fontSize: '13px', padding: '4px 20px', borderRadius: '4px', marginBottom: '10px' }}>CUSTOMER COPY</div>
+                <div style={{ display: 'inline-block', background: currentBillStatus === 'draft' ? '#d97706' : '#1e3a8a', color: '#fff', fontWeight: 'bold', fontSize: '13px', padding: '4px 20px', borderRadius: '4px', marginBottom: '10px' }}>{currentBillStatus === 'draft' ? 'DRAFT / HOLD BILL' : 'CUSTOMER COPY'}</div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <img src="/logo.png" alt="MVM" style={{ width: '50px', height: '50px', objectFit: 'contain' }} />
@@ -448,8 +570,9 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
         <div className="modal-header" style={{ background: 'var(--white)' }}>
           <h2 className="modal-title">Retail Invoice</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-success" onClick={() => handleSave(false)} disabled={isSaving}>{isSaving ? 'Saving...' : 'Save Bill'}</button>
-<button className="btn btn-primary" onClick={() => handleSave(true)} disabled={isSaving}>{isSaving ? 'Saving...' : '🖨️  Save & Print'}</button>
+            <button className="btn" style={{ background: '#f59e0b', color: '#ffffff', border: '1px solid #d97706', fontWeight: 600 }} onClick={() => handleSaveDraft()} disabled={isSaving || isSavingDraft}>{isSavingDraft ? 'Saving Draft...' : 'Save Draft'}</button>
+            <button className="btn btn-success" onClick={() => handleSave(false)} disabled={isSaving || isSavingDraft}>{isSaving ? 'Saving...' : 'Save Bill'}</button>
+            <button className="btn btn-primary" onClick={() => handleSave(true)} disabled={isSaving || isSavingDraft}>{isSaving ? 'Saving...' : '🖨️  Save & Print'}</button>
             <button className="btn btn-outline" onClick={onClose}>Close</button>
           </div>
         </div>
@@ -470,7 +593,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
                     </h1>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '10px', color: '#1e3a8a', fontWeight: 'bold' }}>
-                    <div style={{ fontSize: '13px', border: '1.5px solid #1e3a8a', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' }}>{billType === 'gst' ? 'TAX INVOICE' : 'RETAIL INVOICE'}</div>
+                    <div style={{ fontSize: '13px', border: '1.5px solid #1e3a8a', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' }}>{currentBillStatus === 'draft' ? 'DRAFT / HOLD BILL' : (billType === 'gst' ? 'TAX INVOICE' : 'RETAIL INVOICE')}</div>
                     <div>MOB: +91-9837616333</div>
                     <div>Email: maaveshnomvm@gmail.com</div>
                     <div style={{ maxWidth: '240px', fontSize: '9px', marginTop: '2px' }}>ADDRESS: NEAR GOPAL SWEET HOUSE JALESAR ROAD FIROZABAD</div>
@@ -717,6 +840,7 @@ const CustomerBilling = () => {
   const [customGrandTotal, setCustomGrandTotal] = useState('')
   const [editingSaleId, setEditingSaleId] = useState(null)
   const [existingInvoiceNo, setExistingInvoiceNo] = useState('')
+  const [billStatus, setBillStatus] = useState('saved')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -727,6 +851,7 @@ const CustomerBilling = () => {
         if (res.data?.success) {
           const sale = res.data.data;
           setExistingInvoiceNo(sale.invoiceNumber);
+          setBillStatus(sale.billStatus || 'saved');
           setCustomerType(sale.saleType);
           setBillType(sale.isGST ? 'gst' : 'non-gst');
           setPayMode([sale.paymentMode]);
@@ -893,6 +1018,7 @@ const CustomerBilling = () => {
           editingSaleId={editingSaleId}
           existingInvoiceNo={existingInvoiceNo}
           setExistingInvoiceNo={setExistingInvoiceNo}
+          billStatus={billStatus}
           customer={customer}
           customerType={customerType}
           finance={finance}
