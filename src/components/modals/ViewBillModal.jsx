@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
+import { API_BASE_URL } from '../../config/env'
 
 const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
   const [bill, setBill] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [imageFailed, setImageFailed] = useState(false)
 
   useEffect(() => {
     setLoading(true)
@@ -43,23 +45,52 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
 
   const isWholesale = bill.saleType === 'wholesale'
   const editUrl = isWholesale ? `/billing/buyer?edit=${bill._id}` : `/billing/customer?edit=${bill._id}`
+  const displayBillNo = bill.invoiceNumber || `#${bill._id}`
+
+  const getBillImageUrl = (url) => {
+    if (!url) return ''
+    if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) return url
+    const base = API_BASE_URL.replace(/\/api$/, '')
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`
+  }
+
+  const isDraft = bill.billStatus === 'draft'
+  const isCancelled = bill.status === 'cancelled' || bill.billStatus === 'cancelled'
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(0,0,0,0.6)', overflowY: 'auto' }}>
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', margin: '40px auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
         <div className="modal-header" style={{ background: 'var(--white)', flexShrink: 0 }}>
-          <h2 className="modal-title">View Invoice - #{bill.invoiceNumber}</h2>
+          <h2 className="modal-title">View Invoice - {displayBillNo}</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-warning" onClick={() => window.location.href = editUrl}>Edit Bill</button>
-            {bill.status !== 'cancelled' && (
-              <button className="btn btn-danger" onClick={() => {
-                if (window.confirm('Are you sure you want to cancel this bill?')) {
-                  api.patch(`/sales/${bill._id}/cancel`).then(res => {
-                    alert('Bill Cancelled')
-                    onClose()
-                  }).catch(e => alert(e.response?.data?.message || 'Failed to cancel'))
-                }
-              }}>Cancel Bill</button>
+            {isDraft ? (
+              <>
+                <button className="btn btn-warning" onClick={() => window.location.href = editUrl}>Edit Draft</button>
+                <button className="btn btn-danger" onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this draft bill?')) {
+                    api.delete(`/sales/${bill._id}`).then(() => {
+                      alert('Draft bill deleted')
+                      onClose()
+                      if (window.location.reload) window.location.reload()
+                    }).catch(e => alert(e.response?.data?.message || 'Failed to delete draft'))
+                  }
+                }}>Delete Draft</button>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-warning" onClick={() => window.location.href = editUrl}>Edit Bill</button>
+                {!isCancelled && (
+                  <button className="btn btn-danger" onClick={() => {
+                    if (window.confirm('Are you sure you want to cancel this bill? Stock and IMEIs will be released back to inventory.')) {
+                      api.patch(`/sales/${bill._id}/cancel`).then(() => {
+                        alert('Bill Cancelled')
+                        onClose()
+                        if (window.location.reload) window.location.reload()
+                      }).catch(e => alert(e.response?.data?.message || 'Failed to cancel'))
+                    }
+                  }}>Cancel Bill</button>
+                )}
+              </>
             )}
             <button className="btn btn-primary" onClick={() => window.print()}>🖨️ Print</button>
             <button className="btn btn-outline" onClick={onClose}>Close</button>
@@ -67,9 +98,14 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
         </div>
 
         <div className="modal-body" style={{ background: 'var(--white)', padding: '24px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
-          {bill.billImageUrl ? (
+          {!imageFailed && bill.billImageUrl ? (
             <div style={{ textAlign: 'center' }}>
-              <img src={bill.billImageUrl} alt={`Bill #${bill.invoiceNumber}`} style={{ maxWidth: '100%', border: '1px solid var(--border)', borderRadius: '4px' }} />
+              <img
+                src={getBillImageUrl(bill.billImageUrl)}
+                alt={`Bill ${displayBillNo}`}
+                onError={() => setImageFailed(true)}
+                style={{ maxWidth: '100%', border: '1px solid var(--border)', borderRadius: '4px' }}
+              />
             </div>
           ) : (
             <div id="print-area" className="printable-invoice" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', background: '#fff', padding: '20px', border: '2px solid #1e3a8a', borderRadius: '8px' }}>
@@ -88,9 +124,10 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '12px' }}>
-                    <div><strong>Invoice No.:</strong> #{bill.invoiceNumber}</div>
+                    <div><strong>Invoice No.:</strong> {displayBillNo}</div>
                     <div><strong>Date:</strong> {new Date(bill.createdAt).toLocaleDateString('en-IN')}</div>
-                    {bill.status === 'cancelled' && <div style={{ color: 'red', fontWeight: 'bold', marginTop: '4px', fontSize: '14px' }}>CANCELLED</div>}
+                    {isCancelled && <div style={{ color: 'red', fontWeight: 'bold', marginTop: '4px', fontSize: '14px' }}>CANCELLED</div>}
+                    {isDraft && <div style={{ color: '#d97706', fontWeight: 'bold', marginTop: '4px', fontSize: '14px' }}>DRAFT</div>}
                   </div>
                 </div>
               </div>
@@ -129,8 +166,8 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                       <td style={{ padding: '6px' }}>{item.productName}</td>
                       <td style={{ padding: '6px', fontFamily: 'monospace' }}>{item.imei || '-'}</td>
                       <td style={{ padding: '6px', textAlign: 'center' }}>{item.qty}</td>
-                      <td style={{ padding: '6px', textAlign: 'right' }}>{item.price.toLocaleString('en-IN')}</td>
-                      <td style={{ padding: '6px', textAlign: 'right' }}>{item.total.toLocaleString('en-IN')}</td>
+                      <td style={{ padding: '6px', textAlign: 'right' }}>{Number(item.price || 0).toLocaleString('en-IN')}</td>
+                      <td style={{ padding: '6px', textAlign: 'right' }}>{Number(item.total || 0).toLocaleString('en-IN')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -141,19 +178,19 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                 <div style={{ width: '250px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                     <span>Subtotal:</span>
-                    <span>₹{bill.subTotal?.toLocaleString('en-IN')}</span>
+                    <span>₹{Number(bill.subTotal || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                     <span>Discount:</span>
-                    <span>-₹{bill.totalDiscount?.toLocaleString('en-IN')}</span>
+                    <span>-₹{Number(bill.totalDiscount || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0' }}>
                     <span>Tax/GST ({bill.gstPercent !== undefined ? bill.gstPercent : 18}%):</span>
-                    <span>₹{bill.totalTax?.toLocaleString('en-IN')}</span>
+                    <span>₹{Number(bill.totalTax || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: '2px solid #1e3a8a', borderBottom: '2px solid #1e3a8a', fontWeight: 'bold', fontSize: '14px', marginTop: '4px' }}>
                     <span>Grand Total:</span>
-                    <span>₹{bill.grandTotal?.toLocaleString('en-IN')}</span>
+                    <span>₹{Number(bill.grandTotal || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>
@@ -166,19 +203,55 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                     <div>Mode: <span style={{ textTransform: 'capitalize' }}>{bill.paymentMode}</span></div>
                     {bill.paymentMode === 'finance' && bill.financeDetails && (
                       <div style={{ marginTop: '4px', fontSize: '11px', color: '#444' }}>
-                        <div>Financier: {bill.financeDetails.company || bill.financeDetails.fileNo}</div>
+                        <div>Financier: {bill.financeDetails.company || bill.financeDetails.fileNo || 'N/A'}</div>
                         <div>EMI Amount: ₹{bill.financeDetails.emiAmount}</div>
-                        <div>Tenure: {bill.financeDetails.tenure}</div>
+                        <div>Tenure: {bill.financeDetails.tenure} Months</div>
+                        {bill.financeDetails.firstEmiDate && (
+                          <div>First EMI: {new Date(bill.financeDetails.firstEmiDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                        )}
                       </div>
                     )}
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 'bold', marginBottom: '4px', color: '#1e3a8a' }}>Amount Details</div>
-                    <div>Paid: ₹{bill.amountPaid?.toLocaleString('en-IN') || 0}</div>
-                    <div>Due: ₹{bill.amountDue?.toLocaleString('en-IN') || 0}</div>
+                    <div>Paid: ₹{Number(bill.amountPaid || 0).toLocaleString('en-IN')}</div>
+                    <div>Due: ₹{Number(bill.amountDue || 0).toLocaleString('en-IN')}</div>
                   </div>
                 </div>
               </div>
+
+              {/* EMI Schedule if Finance */}
+              {bill.paymentMode === 'finance' && bill.installmentSchedule && bill.installmentSchedule.length > 0 && (
+                <div style={{ marginTop: '20px' }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1e3a8a', fontSize: '13px' }}>EMI Installment Schedule</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '11px' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9', color: '#334155', textAlign: 'left' }}>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1' }}>Installment #</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1' }}>Due Date</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>Due Amount (₹)</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'right' }}>Paid Amount (₹)</th>
+                        <th style={{ padding: '6px', border: '1px solid #cbd5e1', textAlign: 'center' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bill.installmentSchedule.map((inst, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '6px', border: '1px solid #e2e8f0' }}>Installment #{inst.installmentNumber}</td>
+                          <td style={{ padding: '6px', border: '1px solid #e2e8f0' }}>
+                            {inst.dueDate ? new Date(inst.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}
+                          </td>
+                          <td style={{ padding: '6px', border: '1px solid #e2e8f0', textAlign: 'right' }}>₹{Number(inst.dueAmount || 0).toLocaleString('en-IN')}</td>
+                          <td style={{ padding: '6px', border: '1px solid #e2e8f0', textAlign: 'right' }}>₹{Number(inst.paidAmount || 0).toLocaleString('en-IN')}</td>
+                          <td style={{ padding: '6px', border: '1px solid #e2e8f0', textAlign: 'center', textTransform: 'capitalize', fontWeight: 'bold', color: inst.status === 'paid' ? '#16a34a' : inst.status === 'due' ? '#dc2626' : '#d97706' }}>
+                            {inst.status}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
 
             </div>
           )}
