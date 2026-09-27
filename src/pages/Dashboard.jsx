@@ -177,7 +177,7 @@ const Dashboard = () => {
       )}
 
       {/* Header - EXACT SAME ROW ON MOBILE MATCHING IMAGE 2 */}
-      <div className="page-header" style={{ marginBottom: isMobile ? '10px' : '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+      <div className="page-header" style={{ marginBottom: isMobile ? '10px' : '20px', display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', width: '100%' }}>
         <div className="page-header-left">
           <h1 style={{ fontSize: isMobile ? '18px' : '24px', fontWeight: 800, margin: 0, color: '#0f172a' }}>Dashboard</h1>
           <p style={{ margin: '1px 0 0', color: '#64748b', fontSize: isMobile ? '10px' : '13px' }}>Welcome back, {user?.name || 'Maa Veshno Admin'}</p>

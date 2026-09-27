@@ -2611,7 +2611,8 @@ img {
 
   /* Adjust Page Header Typography */
   .page-header {
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: space-between;
     align-items: flex-start;
     gap: 12px;
     margin-bottom: 16px;
