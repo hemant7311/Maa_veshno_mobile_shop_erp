@@ -2,64 +2,42 @@ import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
 
 const Reports = () => {
-  const [sales, setSales] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [reportData, setReportData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   
   // Filters
   const [dateRange, setDateRange] = useState('all'); // today, week, month, all
   
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [dateRange]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [salesRes, prodRes] = await Promise.all([
-        api.get('/sales'),
-        api.get('/products')
-      ]);
-      setSales(salesRes.data?.data || []);
-      setProducts(prodRes.data?.data || []);
-    } catch (error) {
-      console.error('Error fetching report data', error);
+      setError('');
+      const res = await api.get('/reports', { params: { range: dateRange } });
+      if (res.data?.success) {
+        setReportData(res.data.data || null);
+      } else {
+        setError('Failed to load report data');
+      }
+    } catch (err) {
+      console.error('Error fetching report data', err);
+      setError(err.response?.data?.message || err.message || 'Error fetching report data');
     } finally {
       setLoading(false);
     }
   };
 
-  const getFilteredSales = () => {
-    if (dateRange === 'all') return sales;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    return sales.filter(s => {
-      const d = new Date(s.createdAt);
-      if (dateRange === 'today') return d >= today;
-      if (dateRange === 'week') {
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        return d >= weekAgo;
-      }
-      if (dateRange === 'month') {
-        const monthAgo = new Date(today);
-        monthAgo.setMonth(monthAgo.getMonth() - 1);
-        return d >= monthAgo;
-      }
-      return true;
-    });
-  };
-
-  const filteredSales = getFilteredSales();
-
-  const totalSalesVal = filteredSales.reduce((acc, s) => acc + (s.grandTotal || 0), 0);
-  const retailSalesVal = filteredSales.filter(s => s.saleType === 'retail').reduce((acc, s) => acc + (s.grandTotal || 0), 0);
-  const wholesaleSalesVal = filteredSales.filter(s => s.saleType === 'wholesale').reduce((acc, s) => acc + (s.grandTotal || 0), 0);
-  const totalTax = filteredSales.reduce((acc, s) => acc + (s.totalTax || 0), 0);
-  
-  const totalStockInVal = products.reduce((acc, p) => acc + ((p.purchasePrice || 0) * (p.stock || 1)), 0);
-  const totalStockCount = products.reduce((acc, p) => acc + (p.stock || 1), 0);
+  const totalSalesVal = reportData?.summary?.totalSales || 0;
+  const salesCount = reportData?.sales?.count || 0;
+  const retailSalesVal = reportData?.summary?.retailSales || 0;
+  const wholesaleSalesVal = reportData?.summary?.wholesaleSales || 0;
+  const totalTax = reportData?.summary?.totalTax || 0;
+  const totalStockCount = reportData?.summary?.totalStockCount || 0;
+  const totalStockInVal = reportData?.summary?.totalStockValue || 0;
 
   return (
     <div>
@@ -83,6 +61,12 @@ const Reports = () => {
         </div>
       </div>
 
+      {error && (
+        <div style={{ padding: '16px', color: 'var(--danger)', background: '#fee2e2', borderRadius: '4px', marginBottom: '20px' }}>
+          {error}
+        </div>
+      )}
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: '50px' }}>Loading reports...</div>
       ) : (
@@ -90,25 +74,25 @@ const Reports = () => {
           
           <div className="card" style={{ padding: '24px', borderTop: '4px solid var(--primary)' }}>
             <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)', fontSize: '14px', textTransform: 'uppercase' }}>Total Revenue</h3>
-            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>?{totalSalesVal.toLocaleString('en-IN')}</h2>
-            <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>From {filteredSales.length} bills</p>
+            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>₹{totalSalesVal.toLocaleString('en-IN')}</h2>
+            <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>From {salesCount} bills</p>
           </div>
 
           <div className="card" style={{ padding: '24px', borderTop: '4px solid #10b981' }}>
             <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)', fontSize: '14px', textTransform: 'uppercase' }}>Retail Sales</h3>
-            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>?{retailSalesVal.toLocaleString('en-IN')}</h2>
+            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>₹{retailSalesVal.toLocaleString('en-IN')}</h2>
             <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>Retail Counter Output</p>
           </div>
 
           <div className="card" style={{ padding: '24px', borderTop: '4px solid #f59e0b' }}>
             <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)', fontSize: '14px', textTransform: 'uppercase' }}>Wholesale Sales</h3>
-            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>?{wholesaleSalesVal.toLocaleString('en-IN')}</h2>
+            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>₹{wholesaleSalesVal.toLocaleString('en-IN')}</h2>
             <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>Wholesaler Deliveries</p>
           </div>
 
           <div className="card" style={{ padding: '24px', borderTop: '4px solid #6366f1' }}>
             <h3 style={{ margin: '0 0 10px 0', color: 'var(--text-secondary)', fontSize: '14px', textTransform: 'uppercase' }}>Tax (GST) Collected</h3>
-            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>?{totalTax.toLocaleString('en-IN')}</h2>
+            <h2 style={{ margin: 0, fontSize: '32px', color: 'var(--text)' }}>₹{totalTax.toLocaleString('en-IN')}</h2>
             <p style={{ margin: '8px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>Based on selected time</p>
           </div>
 
@@ -121,7 +105,7 @@ const Reports = () => {
               </div>
               <div>
                 <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}>Approx Stock Value</p>
-                <h2 style={{ margin: 0, fontSize: '28px', color: '#0f172a' }}>?{totalStockInVal.toLocaleString('en-IN')}</h2>
+                <h2 style={{ margin: 0, fontSize: '28px', color: '#0f172a' }}>₹{totalStockInVal.toLocaleString('en-IN')}</h2>
               </div>
             </div>
           </div>
