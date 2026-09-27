@@ -210,7 +210,11 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
   const cgstAmt = safeGst / 2;
   const sgstAmt = safeGst / 2;
   const finalInvoiceNo = currentInvoiceNo || existingInvoiceNo || 'Pending Save'
+  const emiStartMonths = finance.emiStartAfterMonths !== undefined && finance.emiStartAfterMonths !== null ? Number(finance.emiStartAfterMonths) : 1
+  const emiStartText = `${emiStartMonths} Month${emiStartMonths > 1 ? 's' : ''} After Bill`
+  const firstEmiDateFormatted = finance.emiPayDate ? new Date(finance.emiPayDate).toLocaleDateString('en-IN') : '—'
   const emiDayOnly = finance.emiPayDate ? new Date(finance.emiPayDate).getDate() : ''
+  const emiRecurringText = emiDayOnly ? `Every ${emiDayOnly}${emiDayOnly === 1 ? 'st' : emiDayOnly === 2 ? 'nd' : emiDayOnly === 3 ? 'rd' : 'th'} of Month` : '—'
   const emiMethodLabel = finance.emiPaymentMethod === 'bank' ? 'Auto bank deduction' : 'Will come to shop'
   const downPaymentModeLabel = downPaymentMode.length > 0 ? downPaymentMode.join(', ').toUpperCase() : 'Cash'
 
@@ -774,9 +778,11 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>BILL DATE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{new Date().toLocaleDateString('en-IN')}</span></div>
                         <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>BILL NO:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>{finalInvoiceNo || 'Pending Save'}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>₹ {finance.emi || '0'}.00</span></div>
+                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>₹ {Number(finance.emi || 0).toLocaleString('en-IN')}</span></div>
                         <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>TENURE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{finance.tenure}</span></div>
-                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI DATE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{emiDayOnly ? `Every ${emiDayOnly}${emiDayOnly === 1 ? 'st' : emiDayOnly === 2 ? 'nd' : emiDayOnly === 3 ? 'rd' : 'th'} of month` : '—'}</span></div>
+                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI START:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>{emiStartText}</span></div>
+                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>FIRST EMI DATE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1, fontWeight: 'bold' }}>{firstEmiDateFormatted}</span></div>
+                        <div style={{ display: 'flex' }}><span style={{ width: '110px', fontWeight: 'bold' }}>EMI DATE:</span> <span style={{ borderBottom: '1.5px solid #000', flex: 1 }}>{emiRecurringText}</span></div>
                         {financeType === 'private' && (
                           <div style={{ marginTop: '8px', textAlign: 'center' }}>
                             <img src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(`${window.location.origin}/track-emi/${customer.mobile}`)}`} alt="QR" style={{ border: '1px solid #000', padding: '2px' }} />
