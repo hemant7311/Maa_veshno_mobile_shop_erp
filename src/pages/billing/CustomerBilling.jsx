@@ -636,7 +636,7 @@ const CustomerBilling = () => {
             });
             setFinanceType(sale.financeDetails.loanId ? 'company' : 'private');
           }
-          setItems(sale.items.map(i => ({ productId: i.productId, product: i.productName, imei: i.imei, qty: i.qty, price: i.price, discount: i.discount || 0, total: i.total })));
+          setItems(sale.items.map(i => ({ productId: i.productId, product: i.productName, imei: i.imei, qty: i.qty, price: i.price, purchasePrice: i.purchasePrice, discount: i.discount || 0, total: i.total })));
           setCustomDiscount(sale.totalDiscount || '');
           setCustomGrandTotal(sale.grandTotal || '');
         }
