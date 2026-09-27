@@ -172,6 +172,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
           imei: i.imei,
           qty: i.qty,
           price: i.price,
+          purchasePrice: i.purchasePrice !== undefined ? Number(i.purchasePrice) : undefined,
           discount: i.discount,
           tax: 0,
           total: (i.price * i.qty) - i.discount
