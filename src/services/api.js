@@ -125,6 +125,9 @@ export const exportCustomerReceivablesData = (params) => api.get('/exports/custo
 export const exportCompanyReturns = (params) => api.get('/exports/company-returns', { params, responseType: 'blob' })
 export const exportCompanyReturnsByMobile = (params) => api.get('/exports/company-returns/mobile', { params, responseType: 'blob' })
 export const getFullBackup = () => api.get('/exports/full-backup')
+export const exportFullBackupZip = () => api.get('/exports/full-backup-zip', { responseType: 'blob' })
+export const exportCustomBackup = (data) => api.post('/exports/custom', data, { responseType: 'blob' })
+export const exportDatabaseDump = () => api.get('/exports/database-dump', { responseType: 'blob' })
 
 /* ============ EXPENSES API ============ */
 export const getAllExpenses = (params) => api.get('/expenses', { params })
