@@ -1,6 +1,98 @@
 import React, { useState, useEffect } from 'react'
 import api from '../../services/api'
 import ViewBillModal from '../../components/modals/ViewBillModal'
+import { Eye, Edit, IndianRupee, RefreshCw, Trash2, XCircle } from 'lucide-react'
+
+const PaymentModal = ({ customer, onClose, onSuccess }) => {
+  const [amount, setAmount] = useState(customer.amountDue || '')
+  const [paymentMode, setPaymentMode] = useState('cash')
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const payAmt = Number(amount)
+    if (!payAmt || payAmt <= 0) {
+      setError('Please enter a valid payment amount greater than zero.')
+      return
+    }
+    if (payAmt > customer.amountDue) {
+      setError(`Payment cannot exceed remaining due (₹${customer.amountDue.toLocaleString('en-IN')}).`)
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await api.patch(`/sales/${customer.id}`, {
+        amountPaid: (customer.amountPaid || 0) + payAmt,
+        paymentMode
+      })
+      if (res.data?.success) {
+        onSuccess()
+        onClose()
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Payment failed.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(0,0,0,0.6)', zIndex: 1100 }}>
+      <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '420px', padding: '24px', background: 'var(--white)', borderRadius: '8px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '10px' }}>
+          <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '16px' }}>
+            💰 Receive Payment - {customer.invoiceNumber}
+          </h3>
+          <button className="modal-close" onClick={onClose} style={{ border: 'none', background: 'none', cursor: 'pointer' }}>✕</button>
+        </div>
+        {error && <div style={{ color: 'var(--danger)', fontSize: '13px', marginBottom: '12px' }}>{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Customer Name</label>
+            <input type="text" className="form-input" value={customer.name} disabled style={{ background: 'var(--bg)', width: '100%' }} />
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Total Due Amount</label>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--danger)' }}>₹{Number(customer.amountDue).toLocaleString('en-IN')}</div>
+          </div>
+          <div style={{ marginBottom: '12px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Payment Amount (₹)</label>
+            <input
+              type="number"
+              className="form-input"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="Enter amount"
+              max={customer.amountDue}
+              min={1}
+              required
+              autoFocus
+              style={{ width: '100%' }}
+            />
+          </div>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '4px' }}>Payment Mode</label>
+            <select className="form-select" value={paymentMode} onChange={e => setPaymentMode(e.target.value)} style={{ width: '100%' }}>
+              <option value="cash">Cash</option>
+              <option value="upi">UPI</option>
+              <option value="card">Card</option>
+              <option value="bank_transfer">Bank Transfer</option>
+            </select>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-outline" onClick={onClose} disabled={submitting}>Cancel</button>
+            <button type="submit" className="btn btn-success" disabled={submitting}>
+              {submitting ? 'Saving...' : 'Confirm Payment'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
 
 const CustomerDetailsModal = ({ customer, onClose, onRefresh }) => {
   const [sale, setSale] = useState(null)
@@ -190,6 +282,7 @@ const Customers = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const [viewingCustomer, setViewingCustomer] = useState(null)
   const [viewingDetails, setViewingDetails] = useState(null)
+  const [paymentCustomer, setPaymentCustomer] = useState(null)
   const [customers, setCustomers] = useState([])
   const [loading, setLoading] = useState(true)
   const itemsPerPage = 10
@@ -211,14 +304,15 @@ const Customers = () => {
           product: s.items.map(i => i.productName).join(', '),
           imei: s.items.map(i => i.imei).filter(Boolean).join(', '),
           total: s.grandTotal,
-          amountPaid: s.amountPaid,
-          amountDue: s.amountDue,
+          amountPaid: s.amountPaid || 0,
+          amountDue: s.amountDue !== undefined ? s.amountDue : Math.max(0, (s.grandTotal || 0) - (s.amountPaid || 0)),
           mode: s.paymentMode ? s.paymentMode.charAt(0).toUpperCase() + s.paymentMode.slice(1) : '-',
           finType: s.financeDetails?.company ? 'Company Finance' : 'Private Finance',
           company: s.financeDetails?.company || '-',
-          status: s.status === 'cancelled' || s.billStatus === 'cancelled' ? 'Cancelled' : (s.amountDue <= 0 ? 'Active' : 'Pending'),
+          status: s.status === 'cancelled' || s.billStatus === 'cancelled' ? 'Cancelled' : (s.billStatus === 'draft' ? 'Draft' : (s.amountDue <= 0 ? 'Paid' : 'Due')),
           billStatus: s.billStatus,
           rawStatus: s.status,
+          saleType: s.saleType,
           date: s.createdAt,
           tenure: s.financeDetails?.tenure || 6,
           emiAmount: s.financeDetails?.emiAmount || 0,
@@ -236,28 +330,51 @@ const Customers = () => {
   }
 
   const totalCustomers = customers.length
-  const activeCustomers = customers.filter(c => c.status === 'Active').length
-  const pendingCustomers = customers.filter(c => c.status === 'Pending').length
-  const totalSales = customers.reduce((sum, c) => sum + (Number(c.total) || 0), 0)
+  const draftCount = customers.filter(c => c.billStatus === 'draft').length
+  const paidCount = customers.filter(c => (c.billStatus === 'paid' || (c.status === 'Paid' && c.billStatus !== 'draft')) && c.billStatus !== 'cancelled' && c.rawStatus !== 'cancelled').length
+  const dueCount = customers.filter(c => c.amountDue > 0 && c.billStatus !== 'draft' && c.billStatus !== 'cancelled' && c.rawStatus !== 'cancelled').length
+  const cancelledCount = customers.filter(c => c.billStatus === 'cancelled' || c.rawStatus === 'cancelled').length
+
+  const totalSales = customers
+    .filter(c => c.billStatus !== 'draft' && c.billStatus !== 'cancelled' && c.rawStatus !== 'cancelled')
+    .reduce((sum, c) => sum + (Number(c.total) || 0), 0)
 
   const stats = [
     { label: 'Total Customers', value: totalCustomers, sub: 'All Registered', color: 'blue', icon: '👥', filterValue: 'All Status' },
-    { label: 'Active Customers', value: activeCustomers, sub: 'Active / Paid', color: 'green', icon: '✅', filterValue: 'Active' },
-    { label: 'Pending Customers', value: pendingCustomers, sub: 'Pending Dues', color: 'orange', icon: '⏳', filterValue: 'Pending' },
-    { label: 'Total Sales', value: `₹${totalSales.toLocaleString('en-IN')}`, sub: 'All Customers', color: 'purple', icon: '₹', filterValue: null },
+    { label: 'Draft Bills', value: draftCount, sub: 'Drafts', color: 'yellow', icon: '📝', filterValue: 'Draft' },
+    { label: 'Paid Bills', value: paidCount, sub: 'Completed', color: 'green', icon: '✅', filterValue: 'Paid' },
+    { label: 'Pending Dues', value: dueCount, sub: 'Outstanding', color: 'orange', icon: '🔴', filterValue: 'Due' },
+    { label: 'Total Sales', value: `₹${totalSales.toLocaleString('en-IN')}`, sub: 'Completed Sales', color: 'purple', icon: '₹', filterValue: null },
   ]
 
-  const filtered = customers.filter(c =>
-    (filterStatus === 'All Status' || c.status === filterStatus || (filterStatus === 'Pending Dues' && c.amountDue > 0)) &&
-    (filterPaymentMode === 'All Payment Mode' || c.mode.toLowerCase() === filterPaymentMode.toLowerCase()) &&
-    (
-      (c.invoiceNumber && c.invoiceNumber.toLowerCase().includes(search.toLowerCase())) ||
-      (c.name && c.name.toLowerCase().includes(search.toLowerCase())) ||
-      (c.phone && c.phone.includes(search)) ||
-      (c.product && c.product.toLowerCase().includes(search.toLowerCase())) ||
-      (c.imei && c.imei.toLowerCase().includes(search.toLowerCase()))
-    )
-  )
+  const filtered = customers.filter(c => {
+    const bStatus = c.billStatus || (c.rawStatus === 'cancelled' ? 'cancelled' : (c.amountDue <= 0 ? 'paid' : 'due'))
+
+    let matchesStatus = true
+    if (filterStatus === 'Draft') matchesStatus = bStatus === 'draft'
+    else if (filterStatus === 'Paid') matchesStatus = bStatus === 'paid' || (c.status === 'Paid' && bStatus !== 'draft' && bStatus !== 'cancelled' && bStatus !== 'due')
+    else if (filterStatus === 'Partially Paid') matchesStatus = bStatus === 'partially_paid'
+    else if (filterStatus === 'Due') matchesStatus = bStatus === 'due' || (c.amountDue > 0 && bStatus !== 'draft' && bStatus !== 'cancelled')
+    else if (filterStatus === 'Cancelled') matchesStatus = bStatus === 'cancelled' || c.rawStatus === 'cancelled'
+
+    let matchesMode = true
+    if (filterPaymentMode !== 'All Payment Mode') {
+      matchesMode = c.mode.toLowerCase() === filterPaymentMode.toLowerCase()
+    }
+
+    const query = search.toLowerCase().trim()
+    let matchesSearch = true
+    if (query) {
+      matchesSearch =
+        (c.invoiceNumber && c.invoiceNumber.toLowerCase().includes(query)) ||
+        (c.name && c.name.toLowerCase().includes(query)) ||
+        (c.phone && c.phone.includes(query)) ||
+        (c.product && c.product.toLowerCase().includes(query)) ||
+        (c.imei && c.imei.toLowerCase().includes(query))
+    }
+
+    return matchesStatus && matchesMode && matchesSearch
+  })
 
   const indexOfLastItem = currentPage * itemsPerPage
   const indexOfFirstItem = indexOfLastItem - itemsPerPage
@@ -268,12 +385,95 @@ const Customers = () => {
     setCurrentPage(pageNumber)
   }
 
-  const statusBadge = (c) => {
-    if (c.billStatus === 'draft') return <span className="badge badge-warning">Draft</span>
-    if (c.status === 'Cancelled' || c.rawStatus === 'cancelled') return <span className="badge badge-danger">Cancelled</span>
-    if (c.status === 'Active') return <span className="badge badge-success">Active</span>
-    if (c.status === 'Pending') return <span className="badge badge-warning">Pending</span>
+  const renderStatusBadge = (c) => {
+    const bStatus = c.billStatus || (c.rawStatus === 'cancelled' ? 'cancelled' : (c.amountDue <= 0 ? 'paid' : 'due'))
+
+    if (bStatus === 'draft') {
+      return (
+        <span className="badge" style={{ background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a', fontWeight: '600' }}>
+          📝 Draft
+        </span>
+      )
+    }
+    if (bStatus === 'cancelled' || c.rawStatus === 'cancelled') {
+      return (
+        <span className="badge badge-danger" style={{ fontWeight: '600' }}>
+          ❌ Cancelled
+        </span>
+      )
+    }
+    if (bStatus === 'paid') {
+      return (
+        <span className="badge badge-success" style={{ fontWeight: '600' }}>
+          ✅ Paid
+        </span>
+      )
+    }
+    if (bStatus === 'partially_paid') {
+      return (
+        <span className="badge" style={{ background: '#fef08a', color: '#854d0e', border: '1px solid #fde047', fontWeight: '600' }}>
+          🟡 Partially Paid
+        </span>
+      )
+    }
+    if (bStatus === 'due') {
+      return (
+        <span className="badge badge-warning" style={{ fontWeight: '600' }}>
+          🔴 Due
+        </span>
+      )
+    }
+    if (bStatus === 'saved') {
+      return (
+        <span className="badge badge-success" style={{ fontWeight: '600' }}>
+          🟢 Saved
+        </span>
+      )
+    }
+
     return <span className="badge badge-secondary">{c.status}</span>
+  }
+
+  const handleConvertDraft = async (c) => {
+    if (window.confirm(`Convert draft ${c.invoiceNumber} into a final bill?`)) {
+      try {
+        const res = await api.patch(`/sales/${c.id}/convert`)
+        if (res.data?.success) {
+          alert(`Draft ${c.invoiceNumber} converted to final bill successfully.`)
+          fetchSales()
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to convert draft')
+      }
+    }
+  }
+
+  const handleDeleteDraft = async (c) => {
+    if (window.confirm(`Delete draft ${c.invoiceNumber} permanently?\nCustomer: ${c.name}\nProduct: ${c.product}`)) {
+      try {
+        const res = await api.delete(`/sales/${c.id}`)
+        if (res.data?.success) {
+          alert(`Draft ${c.invoiceNumber} deleted successfully.`)
+          fetchSales()
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to delete draft')
+      }
+    }
+  }
+
+  const handleCancelBill = async (c) => {
+    if (window.confirm(`Are you sure you want to cancel bill ${c.invoiceNumber}? Stock and IMEIs will be restored to inventory.`)) {
+      try {
+        const res = await api.patch(`/sales/${c.id}/cancel`)
+        if (res.data?.success) {
+          alert(`Bill ${c.invoiceNumber} cancelled successfully.`)
+          fetchSales()
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to cancel bill')
+      }
+    }
   }
 
   const renderPaginationButtons = () => {
@@ -327,6 +527,7 @@ const Customers = () => {
     <div>
       {viewingCustomer && <ViewBillModal saleId={viewingCustomer.id} onClose={() => { setViewingCustomer(null); fetchSales(); }} />}
       {viewingDetails && <CustomerDetailsModal customer={viewingDetails} onClose={() => setViewingDetails(null)} onRefresh={fetchSales} />}
+      {paymentCustomer && <PaymentModal customer={paymentCustomer} onClose={() => setPaymentCustomer(null)} onSuccess={fetchSales} />}
 
       <div className="page-header">
         <div className="page-header-left">
@@ -375,8 +576,21 @@ const Customers = () => {
             </div>
           </div>
           <div className="table-toolbar-right">
-            <select className="form-select" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }} style={{ width: 'auto', height: '36px' }}><option value="All Status">All Status</option><option value="Active">Active</option><option value="Pending">Pending</option><option value="Cancelled">Cancelled</option></select>
-            <select className="form-select" value={filterPaymentMode} onChange={e => { setFilterPaymentMode(e.target.value); setCurrentPage(1); }} style={{ width: 'auto', height: '36px' }}><option value="All Payment Mode">All Payment Mode</option><option value="Finance">Finance</option><option value="Card">Card</option><option value="Cash">Cash</option><option value="UPI">UPI</option></select>
+            <select className="form-select" value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }} style={{ width: 'auto', height: '36px' }}>
+              <option value="All Status">All Status</option>
+              <option value="Draft">Draft</option>
+              <option value="Paid">Paid</option>
+              <option value="Partially Paid">Partially Paid</option>
+              <option value="Due">Due</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+            <select className="form-select" value={filterPaymentMode} onChange={e => { setFilterPaymentMode(e.target.value); setCurrentPage(1); }} style={{ width: 'auto', height: '36px' }}>
+              <option value="All Payment Mode">All Payment Mode</option>
+              <option value="Finance">Finance</option>
+              <option value="Card">Card</option>
+              <option value="Cash">Cash</option>
+              <option value="UPI">UPI</option>
+            </select>
           </div>
         </div>
 
@@ -385,12 +599,14 @@ const Customers = () => {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Bill Number</th>
+                <th>Bill No.</th>
                 <th>Customer Name</th>
                 <th>Phone</th>
                 <th>Product Name</th>
                 <th>IMEI Number</th>
                 <th>Total Purchase (₹)</th>
+                <th>Paid (₹)</th>
+                <th>Due (₹)</th>
                 <th>Payment Mode</th>
                 <th>Finance Company</th>
                 <th>Status</th>
@@ -400,49 +616,179 @@ const Customers = () => {
             <tbody>
               {currentItems.length === 0 ? (
                 <tr>
-                  <td colSpan="11" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  <td colSpan="13" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     {loading ? 'Loading customers...' : 'No customers found.'}
                   </td>
                 </tr>
-              ) : currentItems.map((c, i) => (
-                <tr key={c.id}>
-                  <td style={{ color: 'var(--text-muted)' }}>{indexOfFirstItem + i + 1}</td>
-                  <td style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>{c.invoiceNumber}</td>
-                  <td style={{ fontWeight: 600 }}>{c.name}</td>
-                  <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{c.phone}</td>
-                  <td style={{ color: 'var(--text-primary)' }}>{c.product}</td>
-                  <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '13px' }}>{c.imei || '-'}</td>
-                  <td style={{ fontWeight: 600 }}>₹{Number(c.total || 0).toLocaleString('en-IN')}</td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{c.mode}</td>
-                  <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{c.company}</td>
-                  <td>{statusBadge(c)}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      {c.amountDue > 0 && c.status !== 'Cancelled' && (
-                        <button className="action-btn" onClick={() => {
-                          const amount = window.prompt('Enter amount received from ' + c.name + ' (Remaining: ₹' + c.amountDue.toLocaleString('en-IN') + '):');
-                          if (amount && !isNaN(amount) && Number(amount) > 0) {
-                            api.patch('/sales/' + c.id, { amountPaid: (c.amountPaid || 0) + Number(amount) })
-                              .then(() => fetchSales())
-                              .catch(e => alert('Failed: ' + (e.response?.data?.message || e.message)));
-                          }
-                        }} title="Receive Payment" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'auto', padding: '4px 10px', color: 'var(--success)', border: '1px solid var(--success-light)', background: 'var(--success-light)' }}>
-                          Pay
+              ) : currentItems.map((c, i) => {
+                const isDraft = c.billStatus === 'draft'
+                const isCancelled = c.rawStatus === 'cancelled' || c.billStatus === 'cancelled'
+
+                return (
+                  <tr key={c.id}>
+                    <td style={{ color: 'var(--text-muted)' }}>{indexOfFirstItem + i + 1}</td>
+                    <td style={{ fontWeight: 600, fontFamily: 'monospace', color: 'var(--primary)' }}>{c.invoiceNumber}</td>
+                    <td style={{ fontWeight: 600 }}>{c.name}</td>
+                    <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{c.phone}</td>
+                    <td style={{ color: 'var(--text-primary)' }}>{c.product}</td>
+                    <td style={{ color: 'var(--text-secondary)', fontFamily: 'monospace', fontSize: '13px' }}>{c.imei || '-'}</td>
+                    <td style={{ fontWeight: 600 }}>₹{Number(c.total || 0).toLocaleString('en-IN')}</td>
+                    <td style={{ fontWeight: 600, color: 'var(--success)' }}>₹{Number(c.amountPaid || 0).toLocaleString('en-IN')}</td>
+                    <td style={{ fontWeight: 600, color: c.amountDue > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>₹{Number(c.amountDue || 0).toLocaleString('en-IN')}</td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{c.mode}</td>
+                    <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{c.company}</td>
+                    <td>{renderStatusBadge(c)}</td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        {/* Eye icon - View */}
+                        <button
+                          className="action-btn-icon"
+                          onClick={() => setViewingCustomer(c)}
+                          title="View Bill"
+                          aria-label="View Bill"
+                          style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--primary)',
+                            background: 'rgba(30, 58, 138, 0.08)',
+                            border: '1px solid rgba(30, 58, 138, 0.2)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <Eye size={15} />
                         </button>
-                      )}
-                      {c.mode === 'Finance' && (
-                        <button className="action-btn" onClick={() => setViewingDetails(c)} title="EMI Details" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'auto', padding: '4px 10px', color: 'var(--orange)', border: '1px solid var(--orange-light)', background: 'var(--orange-light)' }}>
-                          EMI
-                        </button>
-                      )}
-                      <button className="action-btn" onClick={() => setViewingCustomer(c)} title="View Bill" style={{ display: 'flex', alignItems: 'center', gap: '4px', width: 'auto', padding: '4px 10px', color: 'var(--primary)', border: '1px solid var(--primary-light)', background: 'var(--primary-light)' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                        View
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+
+                        {/* Edit icon - Edit (if not cancelled) */}
+                        {!isCancelled && (
+                          <button
+                            className="action-btn-icon"
+                            onClick={() => {
+                              const isWholesale = c.saleType === 'wholesale'
+                              window.location.href = isWholesale ? `/billing/buyer?edit=${c.id}` : `/billing/customer?edit=${c.id}`
+                            }}
+                            title={isDraft ? "Edit Draft" : "Edit Bill"}
+                            aria-label={isDraft ? "Edit Draft" : "Edit Bill"}
+                            style={{
+                              width: '32px',
+                              height: '32px',
+                              borderRadius: '6px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#d97706',
+                              background: 'rgba(217, 119, 6, 0.08)',
+                              border: '1px solid rgba(217, 119, 6, 0.2)',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <Edit size={15} />
+                          </button>
+                        )}
+
+                        {/* Draft Actions: Convert & Delete */}
+                        {isDraft && (
+                          <>
+                            <button
+                              className="action-btn-icon"
+                              onClick={() => handleConvertDraft(c)}
+                              title="Convert Draft to Bill"
+                              aria-label="Convert Draft to Bill"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#16a34a',
+                                background: 'rgba(22, 163, 74, 0.08)',
+                                border: '1px solid rgba(22, 163, 74, 0.2)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <RefreshCw size={15} />
+                            </button>
+
+                            <button
+                              className="action-btn-icon"
+                              onClick={() => handleDeleteDraft(c)}
+                              title="Delete Draft"
+                              aria-label="Delete Draft"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#dc2626',
+                                background: 'rgba(220, 38, 38, 0.08)',
+                                border: '1px solid rgba(220, 38, 38, 0.2)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </>
+                        )}
+
+                        {/* Non-Draft & Non-Cancelled Actions: Payment (if due) & Cancel */}
+                        {!isDraft && !isCancelled && (
+                          <>
+                            {c.amountDue > 0 && (
+                              <button
+                                className="action-btn-icon"
+                                onClick={() => setPaymentCustomer(c)}
+                                title="Receive Payment"
+                                aria-label="Receive Payment"
+                                style={{
+                                  width: '32px',
+                                  height: '32px',
+                                  borderRadius: '6px',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  color: '#16a34a',
+                                  background: 'rgba(22, 163, 74, 0.08)',
+                                  border: '1px solid rgba(22, 163, 74, 0.2)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                <IndianRupee size={15} />
+                              </button>
+                            )}
+
+                            <button
+                              className="action-btn-icon"
+                              onClick={() => handleCancelBill(c)}
+                              title="Cancel Bill"
+                              aria-label="Cancel Bill"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#dc2626',
+                                background: 'rgba(220, 38, 38, 0.08)',
+                                border: '1px solid rgba(220, 38, 38, 0.2)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <XCircle size={15} />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

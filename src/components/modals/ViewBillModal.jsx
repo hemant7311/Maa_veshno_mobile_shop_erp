@@ -57,19 +57,35 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
   const isDraft = bill.billStatus === 'draft'
   const isCancelled = bill.status === 'cancelled' || bill.billStatus === 'cancelled'
 
+  const handleConvertDraft = async () => {
+    if (window.confirm(`Convert draft ${displayBillNo} into a final bill?`)) {
+      try {
+        const res = await api.patch(`/sales/${bill._id}/convert`)
+        if (res.data?.success) {
+          alert(`Draft ${displayBillNo} converted to final bill successfully.`)
+          onClose()
+          if (window.location.reload) window.location.reload()
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to convert draft')
+      }
+    }
+  }
+
   return (
     <div className="modal-overlay" onClick={onClose} style={{ background: 'rgba(0,0,0,0.6)', overflowY: 'auto' }}>
       <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: '850px', margin: '40px auto', background: 'var(--bg)', display: 'flex', flexDirection: 'column', maxHeight: '90vh' }}>
         <div className="modal-header" style={{ background: 'var(--white)', flexShrink: 0 }}>
-          <h2 className="modal-title">View Invoice - {displayBillNo}</h2>
+          <h2 className="modal-title">{isDraft ? `View Draft - ${displayBillNo}` : `View Invoice - ${displayBillNo}`}</h2>
           <div style={{ display: 'flex', gap: '8px' }}>
             {isDraft ? (
               <>
                 <button className="btn btn-warning" onClick={() => window.location.href = editUrl}>Edit Draft</button>
+                <button className="btn btn-success" onClick={handleConvertDraft}>Convert to Bill</button>
                 <button className="btn btn-danger" onClick={() => {
-                  if (window.confirm('Are you sure you want to delete this draft bill?')) {
+                  if (window.confirm(`Delete draft ${displayBillNo} permanently?`)) {
                     api.delete(`/sales/${bill._id}`).then(() => {
-                      alert('Draft bill deleted')
+                      alert(`Draft ${displayBillNo} deleted successfully.`)
                       onClose()
                       if (window.location.reload) window.location.reload()
                     }).catch(e => alert(e.response?.data?.message || 'Failed to delete draft'))
@@ -81,9 +97,9 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                 <button className="btn btn-warning" onClick={() => window.location.href = editUrl}>Edit Bill</button>
                 {!isCancelled && (
                   <button className="btn btn-danger" onClick={() => {
-                    if (window.confirm('Are you sure you want to cancel this bill? Stock and IMEIs will be released back to inventory.')) {
+                    if (window.confirm(`Are you sure you want to cancel bill ${displayBillNo}? Stock and IMEIs will be released back to inventory.`)) {
                       api.patch(`/sales/${bill._id}/cancel`).then(() => {
-                        alert('Bill Cancelled')
+                        alert(`Bill ${displayBillNo} Cancelled`)
                         onClose()
                         if (window.location.reload) window.location.reload()
                       }).catch(e => alert(e.response?.data?.message || 'Failed to cancel'))
@@ -110,10 +126,16 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
           ) : (
             <div id="print-area" className="printable-invoice" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px', color: '#000', background: '#fff', padding: '20px', border: '2px solid #1e3a8a', borderRadius: '8px' }}>
               
+              {isDraft && (
+                <div style={{ textAlign: 'center', background: '#fffbe6', border: '2px dashed #d97706', color: '#b45309', padding: '10px', borderRadius: '6px', marginBottom: '16px', fontWeight: 'bold', fontSize: '18px', letterSpacing: '2px' }}>
+                  DRAFT BILL — NOT A FINAL TAX INVOICE
+                </div>
+              )}
+
               {/* Header */}
               <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'inline-block', background: '#1e3a8a', color: '#fff', fontWeight: 'bold', fontSize: '13px', padding: '4px 20px', borderRadius: '4px', marginBottom: '10px' }}>
-                  {isWholesale ? 'WHOLESALE INVOICE' : 'RETAIL INVOICE'}
+                <div style={{ display: 'inline-block', background: isDraft ? '#d97706' : '#1e3a8a', color: '#fff', fontWeight: 'bold', fontSize: '13px', padding: '4px 20px', borderRadius: '4px', marginBottom: '10px' }}>
+                  {isDraft ? 'DRAFT BILL' : (isWholesale ? 'WHOLESALE INVOICE' : 'RETAIL INVOICE')}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -127,7 +149,7 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                     <div><strong>Invoice No.:</strong> {displayBillNo}</div>
                     <div><strong>Date:</strong> {new Date(bill.createdAt).toLocaleDateString('en-IN')}</div>
                     {isCancelled && <div style={{ color: 'red', fontWeight: 'bold', marginTop: '4px', fontSize: '14px' }}>CANCELLED</div>}
-                    {isDraft && <div style={{ color: '#d97706', fontWeight: 'bold', marginTop: '4px', fontSize: '14px' }}>DRAFT</div>}
+                    {isDraft && <div style={{ color: '#d97706', fontWeight: 'bold', marginTop: '4px', fontSize: '14px' }}>📝 DRAFT</div>}
                   </div>
                 </div>
               </div>
