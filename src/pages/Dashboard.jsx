@@ -53,7 +53,8 @@ const Dashboard = () => {
           totalProfit: Number(d.totalProfit) || 0,
           todayProfit: Number(d.todayProfit) || 0,
           todayExpense: Number(d.todayExpense) || 0,
-          todayStockIn: Number(d.todayStockIn) || 0,
+          todayStockIn: Number(d.totalStock) || Number(d.stock) || Number(d.todayStockIn) || 0,
+          totalStock: Number(d.totalStock) || Number(d.stock) || Number(d.todayStockIn) || 0,
           todayReturnsCount: Number(d.todayReturnsCount) || 0,
           todayReturnsAmount: Number(d.todayReturnsAmount) || 0,
           soldProducts: d.todaySoldProducts || d.soldProducts || [],
@@ -565,7 +566,7 @@ const Dashboard = () => {
 
             {/* Card 2: Today's Stock In */}
             <div 
-              onClick={() => setActiveView('sales')}
+              onClick={() => navigate('/inventory/products')}
               style={{
                 background: '#ffffff',
                 borderRadius: '12px',
@@ -578,10 +579,10 @@ const Dashboard = () => {
               }}
             >
               <div style={{ marginBottom: '6px' }}>
-                <span style={{ fontSize: '9px', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase' }}>Stock In</span>
+                <span style={{ fontSize: '9px', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase' }}>Total Stock</span>
               </div>
               <div style={{ fontSize: '13px', fontWeight: 800, color: '#2563eb' }}>
-                {dashboardData.todayStockIn} Items
+                {dashboardData.totalStock || dashboardData.todayStockIn || 0} Items
               </div>
             </div>
 
@@ -815,7 +816,7 @@ const Dashboard = () => {
 
               {/* Stock In Card */}
               <div 
-                onClick={() => setActiveView('sales')}
+                onClick={() => navigate('/inventory/products')}
                 style={{
                   gridColumn: '2',
                   gridRow: '1',
@@ -839,10 +840,10 @@ const Dashboard = () => {
                     </svg>
                   </div>
                   <div style={{ fontSize: '8px', fontWeight: 700, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    Today's Stock In
+                    Total Stock In Hand
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 800, color: '#2563eb', marginTop: '1px' }}>
-                    {dashboardData.todayStockIn} Items
+                    {dashboardData.totalStock || dashboardData.todayStockIn || 0} Items
                   </div>
                 </div>
               </div>
