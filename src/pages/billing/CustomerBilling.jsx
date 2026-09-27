@@ -6,6 +6,26 @@ import { isValidIMEI, isValidMobile } from '../../utils/validators'
 
 const DEFAULT_WARRANTY_OPTIONS = ['No Guarantee', '1 Year Insurance', '6 Months Warranty', 'Screen Replacement', 'Liquid Damage']
 
+const addMonthsClamped = (date, months) => {
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return new Date()
+  const day = d.getDate()
+  d.setDate(1)
+  d.setMonth(d.getMonth() + months)
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()
+  d.setDate(Math.min(day, lastDay))
+  return d
+}
+
+const formatDateYYYYMMDD = (date) => {
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return ''
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 const SelectProductModal = ({ customerType, onClose, onSelect }) => {
   const [products, setProducts] = useState([])
   const [search, setSearch] = useState('')
@@ -252,6 +272,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
           dpAmount: Number(finance.downPayment) || 0,
           emiAmount: Number(finance.emi) || 0,
           tenure: finance.tenure,
+          emiStartAfterMonths: Number(finance.emiStartAfterMonths) || 1,
           emiPayDate: finance.emiPayDate,
           fileNo: finance.fileNo,
           emiPaymentMethod: finance.emiPaymentMethod
@@ -653,7 +674,8 @@ const CustomerBilling = () => {
     company: 'HDB Financial Services',
     loanId: '',
     downPayment: '',
-    emiPayDate: '',
+    emiStartAfterMonths: 1,
+    emiPayDate: formatDateYYYYMMDD(addMonthsClamped(new Date(), 1)),
     emi: '',
     tenure: '6 Months',
     approvalNo: '',
@@ -696,7 +718,8 @@ const CustomerBilling = () => {
               company: sale.financeDetails.company || '',
               loanId: sale.financeDetails.loanId || '',
               downPayment: sale.financeDetails.dpAmount || '',
-              emiPayDate: sale.financeDetails.emiPayDate || '',
+              emiStartAfterMonths: sale.financeDetails.emiStartAfterMonths !== undefined ? sale.financeDetails.emiStartAfterMonths : 1,
+              emiPayDate: sale.financeDetails.emiPayDate ? formatDateYYYYMMDD(sale.financeDetails.emiPayDate) : '',
               emi: sale.financeDetails.emiAmount || '',
               tenure: sale.financeDetails.tenure || '',
               privateFinancier: sale.financeDetails.company || '',
@@ -1081,11 +1104,45 @@ const CustomerBilling = () => {
                     </datalist>
                   </div>
                   <div className="form-group">
-                    <label className="form-label">EMI Pay Date</label>
-                    <input type="date" className="form-input" name="emiPayDate" value={finance.emiPayDate} onChange={handleFinanceChange} />
+                    <label className="form-label">EMI Start After</label>
+                    <select
+                      className="form-input"
+                      name="emiStartAfterMonths"
+                      value={finance.emiStartAfterMonths}
+                      onChange={(e) => {
+                        const val = Number(e.target.value)
+                        setFinance(prev => {
+                          const updated = { ...prev, emiStartAfterMonths: val }
+                          if (val >= 1) {
+                            updated.emiPayDate = formatDateYYYYMMDD(addMonthsClamped(new Date(), val))
+                          }
+                          return updated
+                        })
+                      }}
+                    >
+                      <option value={1}>1 Month Later (Default)</option>
+                      <option value={2}>2 Months Later</option>
+                      <option value={3}>3 Months Later</option>
+                      <option value={4}>4 Months Later</option>
+                      <option value={0}>Custom EMI Date</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">First EMI Date</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      name="emiPayDate"
+                      value={finance.emiPayDate}
+                      onChange={handleFinanceChange}
+                      disabled={Number(finance.emiStartAfterMonths) > 0}
+                      style={{ background: Number(finance.emiStartAfterMonths) > 0 ? 'var(--bg)' : 'white' }}
+                    />
                     {finance.emiPayDate && (
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Will show as: Every {new Date(finance.emiPayDate).getDate()} of the month
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        First EMI: {new Date(finance.emiPayDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        <br />
+                        Then every month on/around the {new Date(finance.emiPayDate).getDate()}th.
                       </div>
                     )}
                   </div>
@@ -1133,11 +1190,45 @@ const CustomerBilling = () => {
                     <input className="form-input" list="tenure-options" name="tenure" value={finance.tenure} onChange={handleFinanceChange} placeholder="e.g. 5 Months" />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">EMI Pay Date</label>
-                    <input type="date" className="form-input" name="emiPayDate" value={finance.emiPayDate} onChange={handleFinanceChange} />
+                    <label className="form-label">EMI Start After</label>
+                    <select
+                      className="form-input"
+                      name="emiStartAfterMonths"
+                      value={finance.emiStartAfterMonths}
+                      onChange={(e) => {
+                        const val = Number(e.target.value)
+                        setFinance(prev => {
+                          const updated = { ...prev, emiStartAfterMonths: val }
+                          if (val >= 1) {
+                            updated.emiPayDate = formatDateYYYYMMDD(addMonthsClamped(new Date(), val))
+                          }
+                          return updated
+                        })
+                      }}
+                    >
+                      <option value={1}>1 Month Later (Default)</option>
+                      <option value={2}>2 Months Later</option>
+                      <option value={3}>3 Months Later</option>
+                      <option value={4}>4 Months Later</option>
+                      <option value={0}>Custom EMI Date</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">First EMI Date</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      name="emiPayDate"
+                      value={finance.emiPayDate}
+                      onChange={handleFinanceChange}
+                      disabled={Number(finance.emiStartAfterMonths) > 0}
+                      style={{ background: Number(finance.emiStartAfterMonths) > 0 ? 'var(--bg)' : 'white' }}
+                    />
                     {finance.emiPayDate && (
-                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                        Will show as: Every {new Date(finance.emiPayDate).getDate()} of the month
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                        First EMI: {new Date(finance.emiPayDate).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                        <br />
+                        Then every month on/around the {new Date(finance.emiPayDate).getDate()}th.
                       </div>
                     )}
                   </div>
