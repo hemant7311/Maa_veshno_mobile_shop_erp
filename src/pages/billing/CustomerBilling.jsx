@@ -194,8 +194,9 @@ const SelectProductModal = ({ customerType, onClose, onSelect }) => {
   )
 }
 
-const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstPercent = 18, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, onClose }) => {
+const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoiceNo, customer, customerType, finance, payMode, downPaymentMode, financeType, items, billType, subtotal, discountAmt, gstPercent = 18, gstAmt, grandTotal, warrantySaleAmount, warrantyOptions, onClose }) => {
   const [isSaving, setIsSaving] = useState(false)
+  const [currentInvoiceNo, setCurrentInvoiceNo] = useState(existingInvoiceNo || '')
   const safeNum = (v) => (isNaN(v) || v == null ? 0 : Number(v));
     const safeSubtotal = safeNum(subtotal);
     const safeDiscount = safeNum(discountAmt);
@@ -206,7 +207,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
   const sgstRate = safeGstPercent / 2;
   const cgstAmt = safeGst / 2;
   const sgstAmt = safeGst / 2;
-  const finalInvoiceNo = existingInvoiceNo || 'Pending Save'
+  const finalInvoiceNo = currentInvoiceNo || existingInvoiceNo || 'Pending Save'
   const emiDayOnly = finance.emiPayDate ? new Date(finance.emiPayDate).getDate() : ''
   const emiMethodLabel = finance.emiPaymentMethod === 'bank' ? 'Auto bank deduction' : 'Will come to shop'
   const downPaymentModeLabel = downPaymentMode.length > 0 ? downPaymentMode.join(', ').toUpperCase() : 'Cash'
@@ -291,6 +292,17 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
       }
 
       const savedSale = res.data?.data
+      const generatedInv = savedSale?.invoiceNumber || res.data?.invoiceNumber
+      if (generatedInv) {
+        setCurrentInvoiceNo(generatedInv)
+        if (setExistingInvoiceNo) {
+          setExistingInvoiceNo(generatedInv)
+        }
+      }
+
+      // Wait for React DOM re-render of #print-area with generated invoice number
+      await new Promise(resolve => setTimeout(resolve, 150))
+
       if (savedSale && savedSale._id) {
         try {
           const printEl = document.getElementById('print-area')
@@ -880,6 +892,7 @@ const CustomerBilling = () => {
         <PrintPreviewModal
           editingSaleId={editingSaleId}
           existingInvoiceNo={existingInvoiceNo}
+          setExistingInvoiceNo={setExistingInvoiceNo}
           customer={customer}
           customerType={customerType}
           finance={finance}

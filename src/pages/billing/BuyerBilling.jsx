@@ -239,6 +239,14 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, form, items, tota
       }
 
       const savedSale = res.data?.data
+      const generatedInv = savedSale?.invoiceNumber || res.data?.invoiceNumber
+      if (generatedInv) {
+        setExistingInvoiceNo(generatedInv)
+      }
+
+      // Wait for React DOM re-render of #print-area with generated invoice number
+      await new Promise(resolve => setTimeout(resolve, 150))
+
       if (savedSale && savedSale._id) {
         try {
           const printEl = document.getElementById('print-area')
