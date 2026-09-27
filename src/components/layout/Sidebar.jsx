@@ -30,11 +30,13 @@ const Sidebar = ({ isOpen }) => {
 
   const hasAccess = (tab) => {
     if (user?.role === 'admin') return true
-    if (user?.role === 'finance_agent') {
+    if (user?.role === 'staff') {
       return Array.isArray(user.permissions) && user.permissions.includes(tab)
     }
     return false
   }
+
+  const isAdmin = user?.role === 'admin'
 
   return (
     <aside className={`sidebar${isOpen ? ' open' : ''}`}>
@@ -51,25 +53,25 @@ const Sidebar = ({ isOpen }) => {
       </div>
 
       <nav className="sidebar-nav">
-        {hasAccess('dashboard') && (
+        {(hasAccess('dashboard') || hasAccess('billing')) && (
           <div className="sidebar-section">
             <div className="sidebar-section-label">MAIN</div>
-            <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
-            <SidebarLink to="/billing/customer" icon={Receipt} label="Billing" />
+            {hasAccess('dashboard') && <SidebarLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />}
+            {hasAccess('billing') && <SidebarLink to="/billing/customer" icon={Receipt} label="Billing" />}
           </div>
         )}
 
-        {hasAccess('products') && (
+        {(hasAccess('products') || hasAccess('categories') || hasAccess('imeis')) && (
           <div className="sidebar-section">
             <div className="sidebar-section-label">INVENTORY</div>
             {hasAccess('categories') && <SidebarLink to="/categories" icon={FolderTree} label="Categories" />}
             {hasAccess('products') && <SidebarLink to="/products" icon={Package} label="Products" />}
             {hasAccess('imeis') && <SidebarLink to="/imei" icon={ScanLine} label="IMEI Management" />}
-            {hasAccess('products') && <SidebarLink to="/company-returns" icon={Package} label="Stock Returns" />}
+            {hasAccess('suppliers') && <SidebarLink to="/company-returns" icon={Package} label="Stock Returns" />}
           </div>
         )}
 
-        {hasAccess('customers') && (
+        {(hasAccess('customers') || hasAccess('suppliers')) && (
           <div className="sidebar-section">
             <div className="sidebar-section-label">BUYER & SUPPLIER</div>
             {hasAccess('customers') && <SidebarLink to="/customers" icon={Users} label="Customers" />}
@@ -100,20 +102,20 @@ const Sidebar = ({ isOpen }) => {
           </div>
         )}
 
-        {hasAccess('settings') && (
+        {(hasAccess('settings') || isAdmin) && (
           <div className="sidebar-section">
             <div className="sidebar-section-label">SETTINGS</div>
-            <SidebarLink to="/users" icon={ShieldCheck} label="Staff" />
-            <SidebarLink to="/settings" icon={Settings} label="Settings" />
-            <SidebarLink to="/sliders" icon={LayoutDashboard} label="Sliders" />
-            <SidebarLink to="/backup" icon={DownloadCloud} label="Backup" />
+            {isAdmin && <SidebarLink to="/users" icon={ShieldCheck} label="Staff & Users" />}
+            {hasAccess('settings') && <SidebarLink to="/settings" icon={Settings} label="Settings" />}
+            {isAdmin && <SidebarLink to="/sliders" icon={LayoutDashboard} label="Sliders" />}
+            {isAdmin && <SidebarLink to="/backup" icon={DownloadCloud} label="Backup" />}
           </div>
         )}
       </nav>
 
       <div className="sidebar-footer">
         <button onClick={handleLogout} className="logout-btn">
-          <LogOut size={20} strokeWidth={2} style={{marginRight: '8px'}} />
+          <LogOut size={20} strokeWidth={2} style={{ marginRight: '8px' }} />
           Logout
         </button>
       </div>
@@ -122,4 +124,3 @@ const Sidebar = ({ isOpen }) => {
 }
 
 export default Sidebar
-

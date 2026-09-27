@@ -8,7 +8,7 @@ import Login from '../pages/Login'
 import Dashboard from '../pages/Dashboard'
 import NotFound from '../pages/NotFound'
 
-// Lazy-load pages (will add as built)
+// Lazy-load pages
 const Home = React.lazy(() => import('../pages/Home'))
 const WholesaleHome = React.lazy(() => import('../pages/storefront/WholesaleHome'))
 const AboutUs = React.lazy(() => import('../pages/AboutUs'))
@@ -65,40 +65,53 @@ const AppRouter = () => {
             <Route path="/refund" element={<RefundPolicy />} />
             <Route path="/track-emi/:phone" element={<TrackEmi />} />
 
-            <Route path="/store" element={<WholesaleHome />} />
+            {/* Wholesaler Storefront Route */}
+            <Route
+              path="/store"
+              element={
+                <ProtectedRoute>
+                  <WholesaleHome />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Admin Auth Route */}
+            {/* Login Route */}
             <Route path="/login" element={<Login />} />
 
-            {/* Protected Dashboard Routes (Admins Only) */}
-            <Route element={<ProtectedRoute requireAdmin={true}><Layout /></ProtectedRoute>}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/purchases" element={<Purchases />} />
-              <Route path="/products/add" element={<AddProduct />} />
-              <Route path="/products/:id/edit" element={<AddProduct />} />
-              <Route path="/company-returns" element={<CompanyReturns />} />
-              <Route path="/imei" element={<ImeiManagement />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/buyers" element={<Buyers />} />
-              <Route path="/suppliers" element={<Suppliers />} />
+            {/* Protected ERP Dashboard & Admin/Staff Routes */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<ProtectedRoute requiredPermission="dashboard"><Dashboard /></ProtectedRoute>} />
+              <Route path="/categories" element={<ProtectedRoute requiredPermission="categories"><Categories /></ProtectedRoute>} />
+              <Route path="/products" element={<ProtectedRoute requiredPermission="products"><Products /></ProtectedRoute>} />
+              <Route path="/products/add" element={<ProtectedRoute requiredPermission="products"><AddProduct /></ProtectedRoute>} />
+              <Route path="/products/:id/edit" element={<ProtectedRoute requiredPermission="products"><AddProduct /></ProtectedRoute>} />
+              <Route path="/purchases" element={<ProtectedRoute requiredPermission="suppliers"><Purchases /></ProtectedRoute>} />
+              <Route path="/company-returns" element={<ProtectedRoute requiredPermission="suppliers"><CompanyReturns /></ProtectedRoute>} />
+              <Route path="/imei" element={<ProtectedRoute requiredPermission="imeis"><ImeiManagement /></ProtectedRoute>} />
+              <Route path="/customers" element={<ProtectedRoute requiredPermission="customers"><Customers /></ProtectedRoute>} />
+              <Route path="/buyers" element={<ProtectedRoute requiredPermission="customers"><Buyers /></ProtectedRoute>} />
+              <Route path="/suppliers" element={<ProtectedRoute requiredPermission="suppliers"><Suppliers /></ProtectedRoute>} />
+
               <Route path="/billing" element={<Navigate to="/billing/customer" replace />} />
-              <Route path="/billing/customer" element={<CustomerBilling />} />
-              <Route path="/billing/buyer" element={<BuyerBilling />} />
-              <Route path="/finance" element={<Finance />} />
-              <Route path="/balance-sheet" element={<BalanceSheet />} />
-              <Route path="/loans" element={<Loans />} />
-              <Route path="/customer-receivables" element={<CustomerReceivables />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/sliders" element={<Sliders />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/backup" element={<Backup />} />
+              <Route path="/billing/customer" element={<ProtectedRoute requiredPermission="billing"><CustomerBilling /></ProtectedRoute>} />
+              <Route path="/billing/buyer" element={<ProtectedRoute requiredPermission="billing"><BuyerBilling /></ProtectedRoute>} />
+
+              <Route path="/finance" element={<ProtectedRoute requiredPermission="finance"><Finance /></ProtectedRoute>} />
+              <Route path="/balance-sheet" element={<ProtectedRoute requiredPermission="finance"><BalanceSheet /></ProtectedRoute>} />
+              <Route path="/loans" element={<ProtectedRoute requiredPermission="finance"><Loans /></ProtectedRoute>} />
+              <Route path="/customer-receivables" element={<ProtectedRoute requiredPermission="finance"><CustomerReceivables /></ProtectedRoute>} />
+
+              <Route path="/reports" element={<ProtectedRoute requiredPermission="reports"><Reports /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute requiredPermission="settings"><Settings /></ProtectedRoute>} />
+
+              {/* Strict Admin Only Routes */}
+              <Route path="/sliders" element={<ProtectedRoute requiredAdmin={true}><Sliders /></ProtectedRoute>} />
+              <Route path="/users" element={<ProtectedRoute requiredAdmin={true}><Users /></ProtectedRoute>} />
+              <Route path="/backup" element={<ProtectedRoute requiredAdmin={true}><Backup /></ProtectedRoute>} />
             </Route>
 
-            {/* Protected Agent Portal Routes (Agents Only) */}
-            <Route element={<ProtectedRoute requireAgent={true}><AgentLayout /></ProtectedRoute>}>
+            {/* Protected Agent Portal Routes (Finance Agents Only) */}
+            <Route element={<ProtectedRoute><AgentLayout /></ProtectedRoute>}>
               <Route path="/agent-panel" element={<AgentPanel />} />
             </Route>
 
@@ -112,5 +125,3 @@ const AppRouter = () => {
 }
 
 export default AppRouter
-
-
