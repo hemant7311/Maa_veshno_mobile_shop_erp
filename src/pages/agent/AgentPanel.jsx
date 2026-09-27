@@ -148,10 +148,15 @@ const AgentPanel = () => {
   useEffect(() => {
     const loadRecords = async () => {
       try {
-        const response = await api.get('/finance/my-records')
+        const response = await api.get('/finance/agent/records')
         setRecords(response.data.data || [])
       } catch (requestError) {
-        setError(requestError.response?.data?.message || 'Your finance records could not be loaded.')
+        try {
+          const fallback = await api.get('/finance/my-records')
+          setRecords(fallback.data.data || [])
+        } catch (fbErr) {
+          setError(requestError.response?.data?.message || 'Your finance records could not be loaded.')
+        }
       } finally {
         setLoading(false)
       }

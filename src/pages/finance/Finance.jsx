@@ -341,20 +341,20 @@ const Finance = () => {
                 <th>Agent ID</th>
                 <th>Total Cases</th>
                 <th>Total Financed Amount (₹)</th>
-                <th>Agent Login</th>
+                {activeTab === 'private' && <th>Agent Login</th>}
                 <th>Action</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  <td colSpan={activeTab === 'private' ? 8 : 7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     Loading finance records...
                   </td>
                 </tr>
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan="8" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                  <td colSpan={activeTab === 'private' ? 8 : 7} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
                     No records found. Generate a bill with finance to see counts here.
                   </td>
                 </tr>
@@ -372,9 +372,11 @@ const Finance = () => {
                   </td>
                   <td style={{ fontWeight: '700', fontSize: '15px' }}>{item.totalCount}</td>
                   <td style={{ fontWeight: '600', color: 'var(--success)' }}>₹{Number(item.totalFinancedAmount || 0).toLocaleString('en-IN')}</td>
-                  <td style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
-                    {item.agentUsername ? item.agentUsername : 'N/A'}
-                  </td>
+                  {activeTab === 'private' && (
+                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
+                      {item.agentUsername ? item.agentUsername : 'N/A'}
+                    </td>
+                  )}
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
                       <button className="action-btn" title="View Details" aria-label="View Details" onClick={() => setViewEntity(item.entityName)}>
