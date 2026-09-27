@@ -2952,129 +2952,67 @@ img {
 @media (max-width: 600px) { .login-mobile-fix .login-card-container { padding: 24px 16px !important; margin: 0 !important; max-width: 100% !important; border-radius: 0 !important; width: 100% !important; box-shadow: none !important; border: none !important; } .login-mobile-fix .form-label-custom { font-size: 12px !important; } .login-mobile-fix .login-form-options { font-size: 11px !important; flex-wrap: wrap !important; } .login-mobile-fix .login-right-panel { padding: 0 !important; background: #ffffff !important; } }
 
 /* ============================================================
-   PRINT CSS — ONE BILL = ONE PAGE
+   PRINT CSS — STRICT SINGLE PAGE A4 ISOLATION
    ============================================================ */
 @media print {
-  /* 1. Hide all app chrome */
-  .sidebar, .navbar, .mobile-bottom-nav, .page-header, .page-header-right,
-  .table-toolbar, .table-footer, .pagination, .card-header, .modal-overlay,
-  .modal-header, .modal-footer, .btn, .action-btns, .toast-container,
-  .no-print, header, nav, footer, aside, .bill-actions {
-    display: none !important;
-  }
-
-  /* 2. Reset page layout for printing */
-  * {
-    box-shadow: none !important;
-    text-shadow: none !important;
+  @page {
+    size: A4 portrait;
+    margin: 4mm;
   }
 
   html, body {
+    height: 100% !important;
+    overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: #fff !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
-  .app-layout {
-    display: block !important;
+  /* Hide everything by default */
+  body * {
+    visibility: hidden !important;
   }
 
-  .main-content {
-    margin: 0 !important;
-    padding: 0 !important;
+  /* Expose modal container so #print-area child is printable */
+  .modal-overlay, .modal-backdrop, .modal-wrapper {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-  }
-
-  .page-content {
-    margin: 0 !important;
-    padding: 8mm !important;
-  }
-
-  /* 3. Page size rules */
-  @page {
-    size: auto;
-    margin: 5mm;
-  }
-
-  /* 4. The print container */
-  #print-area, .invoice-print-area, [data-print-area="true"] {
+    height: 100% !important;
+    background: #ffffff !important;
     display: block !important;
-    visibility: visible !important;
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
+    visibility: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
-  }
-
-  /* 5. Prevent duplicate invoice containers from printing */
-  body .invoice-print-area ~ .invoice-print-area,
-  body #print-area ~ #print-area {
-    display: none !important;
-  }
-
-  /* 6. Remove fixed heights / overflow that cause extra pages */
-  .card, .modal-box {
     border: none !important;
     box-shadow: none !important;
-    border-radius: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
   }
 
-  .modal-overlay, .modal-box {
-    position: static !important;
-    transform: none !important;
+  /* Isolate #print-area and all its children */
+  #print-area, #print-area * {
+    visibility: visible !important;
+  }
+
+  #print-area {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
-    max-width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
+    padding: 4mm !important;
+    box-sizing: border-box !important;
+    zoom: 0.80 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 
-  /* 7. Remove background colors for toner */
-  .stat-card, .badge, tr:nth-child(even) {
-    background: transparent !important;
-  }
-
-  thead th {
-    background: #eee !important;
-    color: #000 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .badge, .badge-success, .badge-warning, .badge-danger, .badge-primary, .badge-info {
-    border: 1px solid #999 !important;
-    color: #000 !important;
-    background: #fff !important;
-  }
-
-  /* 8. Tables: no split rows */
-  table {
-    page-break-inside: auto;
-  }
-
-  tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
-
-  thead {
-    display: table-header-group;
-  }
-
-  tfoot {
-    display: table-footer-group;
+  /* Hide buttons & non-print actions */
+  .no-print, .no-print *, .bill-actions, .bill-actions *, button, .btn {
+    display: none !important;
   }
 }
-

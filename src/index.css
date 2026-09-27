@@ -2952,280 +2952,67 @@ img {
 @media (max-width: 600px) { .login-mobile-fix .login-card-container { padding: 24px 16px !important; margin: 0 !important; max-width: 100% !important; border-radius: 0 !important; width: 100% !important; box-shadow: none !important; border: none !important; } .login-mobile-fix .form-label-custom { font-size: 12px !important; } .login-mobile-fix .login-form-options { font-size: 11px !important; flex-wrap: wrap !important; } .login-mobile-fix .login-right-panel { padding: 0 !important; background: #ffffff !important; } }
 
 /* ============================================================
-   PRINT CSS — ONE BILL = ONE PAGE
+   PRINT CSS — STRICT SINGLE PAGE A4 ISOLATION
    ============================================================ */
-@media print {
-  /* 1. Hide all app chrome */
-  .sidebar, .navbar, .mobile-bottom-nav, .page-header, .page-header-right,
-  .table-toolbar, .table-footer, .pagination, .card-header, .modal-overlay,
-  .modal-header, .modal-footer, .btn, .action-btns, .toast-container,
-  .no-print, header, nav, footer, aside, .bill-actions {
-    display: none !important;
-  }
-
-  /* 2. Reset page layout for printing */
-  * {
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-
-  html, body {
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  .app-layout {
-    display: block !important;
-  }
-
-  .main-content {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-  }
-
-  .page-content {
-    margin: 0 !important;
-    padding: 8mm !important;
-  }
-
-  /* 3. Page size rules */
-  @page {
-    size: auto;
-    margin: 5mm;
-  }
-
-  /* 4. The print container */
-  #print-area, .invoice-print-area, [data-print-area="true"] {
-    display: block !important;
-    visibility: visible !important;
-    page-break-inside: auto !important;
-    break-inside: auto !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    max-height: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-    color: #000 !important;
-  }
-
-  /* 5. Prevent duplicate invoice containers from printing */
-  body .invoice-print-area ~ .invoice-print-area,
-  body #print-area ~ #print-area {
-    display: none !important;
-  }
-
-  /* 6. Remove fixed heights / overflow that cause extra pages */
-  .card, .modal-box {
-    border: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    min-height: auto !important;
-    overflow: visible !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .modal-overlay, .modal-box {
-    position: static !important;
-    transform: none !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background: #fff !important;
-  }
-
-  /* 7. Remove background colors for toner */
-  .stat-card, .badge, tr:nth-child(even) {
-    background: transparent !important;
-  }
-
-  thead th {
-    background: #eee !important;
-    color: #000 !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .badge, .badge-success, .badge-warning, .badge-danger, .badge-primary, .badge-info {
-    border: 1px solid #999 !important;
-    color: #000 !important;
-    background: #fff !important;
-  }
-
-  /* 8. Tables: no split rows */
-  table {
-    page-break-inside: auto;
-  }
-
-  tr {
-    page-break-inside: avoid;
-    page-break-after: auto;
-  }
-
-  thead {
-    display: table-header-group;
-  }
-
-  tfoot {
-    display: table-footer-group;
-  }
-}
-
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
-  margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
-
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
-
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
-
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
-}
-
 @media print {
   @page {
     size: A4 portrait;
-    margin: 5mm;
+    margin: 4mm;
   }
+
   html, body {
     height: 100% !important;
     overflow: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
+    background: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+
+  /* Hide everything by default */
   body * {
-    visibility: hidden;
+    visibility: hidden !important;
   }
+
+  /* Expose modal container so #print-area child is printable */
+  .modal-overlay, .modal-backdrop, .modal-wrapper {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #ffffff !important;
+    display: block !important;
+    visibility: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Isolate #print-area and all its children */
   #print-area, #print-area * {
-    visibility: visible;
+    visibility: visible !important;
   }
-  .modal-overlay {
-    position: absolute !important; 
-  }
+
   #print-area {
     position: absolute !important;
-    left: 0;
-    top: 0;
-    width: 100%;
-    zoom: 0.85 !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
     margin: 0 !important;
-    padding: 10px !important;
-    box-sizing: border-box;
-    page-break-inside: avoid;
+    padding: 4mm !important;
+    box-sizing: border-box !important;
+    zoom: 0.80 !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  /* Hide buttons & non-print actions */
+  .no-print, .no-print *, .bill-actions, .bill-actions *, button, .btn {
+    display: none !important;
   }
 }
-ye codoe lago billing  bele main or ek bar code 
-</USER_REQUEST>
-<ADDITIONAL_METADATA>
-The current local time is: 2026-09-23T21:34:50+05:30.
-</ADDITIONAL_METADATA>
