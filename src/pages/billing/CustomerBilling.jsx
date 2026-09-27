@@ -13,28 +13,80 @@ const SelectProductModal = ({ onClose, onSelect }) => {
   const [error, setError] = useState('')
   const [showScanner, setShowScanner] = useState(false)
 
+  const fetchProducts = async (searchTerm = '') => {
+    try {
+      setLoading(true)
+      const response = await api.get('/products', { params: searchTerm ? { search: searchTerm } : {} })
+      setProducts(response.data.data || [])
+      setError('')
+    } catch {
+      setError('Products load nahi ho sake.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    setLoading(true)
-    api.get('/products')
-      .then((response) => setProducts(response.data.data || []))
-      .catch(() => setError('Products load nahi ho sake.'))
-      .finally(() => setLoading(false))
+    const trimmed = search.trim()
+    if (/^\d{15}$/.test(trimmed)) {
+      const timer = setTimeout(() => {
+        fetchProducts(trimmed)
+      }, 150)
+      return () => clearTimeout(timer)
+    } else if (trimmed === '') {
+      fetchProducts('')
+    }
+  }, [search])
+
+  useEffect(() => {
+    fetchProducts('')
   }, [])
 
-  const searchTrim = search.trim().toLowerCase();
+  const searchTrim = search.trim()
+  const is15Digit = /^\d{15}$/.test(searchTrim)
+
   const filtered = products.filter(p => {
     if (!searchTrim) return true;
+    if (is15Digit) {
+      return String(p.imeiNumber || '').trim() === searchTrim;
+    }
+    const val = searchTrim.toLowerCase();
     return (
-      (p.productName && p.productName.toLowerCase().includes(searchTrim)) ||
-      (p.brand && p.brand.toLowerCase().includes(searchTrim)) ||
-      (p.model && p.model.toLowerCase().includes(searchTrim)) ||
-      (p.variant && p.variant.toLowerCase().includes(searchTrim)) ||
-      (p.categoryName && p.categoryName.toLowerCase().includes(searchTrim)) ||
-      (p.categoryId?.categoryName && p.categoryId.categoryName.toLowerCase().includes(searchTrim)) ||
-      (p.imeiNumber && p.imeiNumber.toLowerCase().includes(searchTrim)) ||
-      (p.barcode && p.barcode.toLowerCase().includes(searchTrim))
+      (p.productName && p.productName.toLowerCase().includes(val)) ||
+      (p.brand && p.brand.toLowerCase().includes(val)) ||
+      (p.model && p.model.toLowerCase().includes(val)) ||
+      (p.variant && p.variant.toLowerCase().includes(val)) ||
+      (p.categoryName && p.categoryName.toLowerCase().includes(val)) ||
+      (p.categoryId?.categoryName && p.categoryId.categoryName.toLowerCase().includes(val)) ||
+      (p.imeiNumber && p.imeiNumber.toLowerCase() === val) ||
+      (p.barcode && p.barcode.toLowerCase() === val)
     );
   })
+
+  const handleScanCode = async (scannedVal) => {
+    const cleaned = scannedVal.trim()
+    setSearch(cleaned)
+    setShowScanner(false)
+    try {
+      setLoading(true)
+      const res = await api.get('/products', { params: { search: cleaned } })
+      const matched = res.data.data || []
+      if (matched.length > 0) {
+        onSelect(matched[0])
+      } else {
+        const localMatch = products.find(p => String(p.imeiNumber || '').trim() === cleaned)
+        if (localMatch) {
+          onSelect({ ...localMatch, imeiNumber: cleaned })
+        } else {
+          alert(`No available product found for IMEI ${cleaned}`)
+        }
+      }
+    } catch (err) {
+      console.error('Scan search failed:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -53,20 +105,27 @@ const SelectProductModal = ({ onClose, onSelect }) => {
           <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', alignItems: 'center' }}>
             <div className="search-bar" style={{ flex: 1, margin: 0 }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <input id="imei-input-customer-billing" placeholder="Search Name, Brand, IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => { 
+              <input id="imei-input-customer-billing" placeholder="Search Name, Brand, IMEI or Barcode..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={async (e) => { 
                 if (e.key === 'Enter') {
-                  const val = e.target.value.trim().toLowerCase();
+                  const val = e.target.value.trim();
                   if (!val) return;
-                  const currentFiltered = products.filter(p => 
-                    (p.productName && p.productName.toLowerCase().includes(val)) ||
-                    (p.brand && p.brand.toLowerCase().includes(val)) ||
-                    (p.model && p.model.toLowerCase().includes(val)) ||
-                    (p.variant && p.variant.toLowerCase().includes(val)) ||
-                    (p.imeiNumber && p.imeiNumber.toLowerCase().includes(val)) ||
-                    (p.barcode && p.barcode.toLowerCase().includes(val))
-                  );
-                  if (currentFiltered.length > 0) { 
-                    onSelect(currentFiltered[0]); 
+                  if (/^\d{15}$/.test(val)) {
+                    try {
+                      setLoading(true)
+                      const res = await api.get('/products', { params: { search: val } })
+                      const resProducts = res.data.data || []
+                      if (resProducts.length > 0) {
+                        onSelect(resProducts[0])
+                        return
+                      }
+                    } catch (err) {
+                      console.error(err)
+                    } finally {
+                      setLoading(false)
+                    }
+                  }
+                  if (filtered.length > 0) { 
+                    onSelect(filtered[0]); 
                   }
                 } 
               }} autoFocus />
@@ -82,17 +141,7 @@ const SelectProductModal = ({ onClose, onSelect }) => {
           {showScanner && (
             <ImeiScannerModal
               onClose={() => setShowScanner(false)}
-              onScan={(scannedVal) => {
-                setSearch(scannedVal)
-                setShowScanner(false)
-                const matched = products.find(p =>
-                  (p.imeiNumber && p.imeiNumber.toLowerCase() === scannedVal.toLowerCase()) ||
-                  (p.barcode && p.barcode.toLowerCase() === scannedVal.toLowerCase())
-                )
-                if (matched) {
-                  onSelect(matched)
-                }
-              }}
+              onScan={handleScanCode}
             />
           )}
 
