@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import ErrorBoundary from '../common/ErrorBoundary'
 
 const AgentLayout = () => {
   const { user, logout } = useAuth()
@@ -12,13 +13,13 @@ const AgentLayout = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg-color)' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Agent Topbar */}
       <header className="agent-header" style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
         alignItems: 'center', 
-        background: 'var(--card-bg)', 
+        background: 'var(--white)', 
         borderBottom: '1px solid var(--border)' 
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -42,7 +43,9 @@ const AgentLayout = () => {
 
       {/* Main Content Area */}
       <main className="agent-main" style={{ flex: 1, maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   )

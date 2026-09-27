@@ -4,37 +4,42 @@ import api from '../../services/api'
 const formatCurrency = (value) => `₹${Number(value || 0).toLocaleString('en-IN')}`
 
 const FinanceDetailsModal = ({ finance, onClose }) => {
+  if (!finance) return null
+
   const tenure = parseInt(finance.tenure) || 6
-  const totalAmountStr = String(finance.totalAmount || finance.totalLimit || 0)
+  const totalAmountStr = String(finance.totalAmount || finance.totalLimit || finance.usedLimit || 0)
   const totalAmount = parseInt(totalAmountStr.replace(/[^0-9]/g, ''), 10) || 0
-  
   const emiAmount = Math.round(totalAmount / tenure)
+  const paidEmisList = Array.isArray(finance.paidEmis) ? finance.paidEmis : []
   
   const [emiSchedule, setEmiSchedule] = useState(() => {
     return Array.from({ length: tenure }).map((_, i) => {
-      const date = new Date(finance.date || finance.paymentDate || new Date())
+      const date = new Date(finance.date || finance.paymentDate || finance.createdAt || new Date())
+      if (isNaN(date.getTime())) date.setTime(Date.now())
       date.setMonth(date.getMonth() + i + 1)
       return {
         id: i + 1,
         dueDate: date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
         amount: emiAmount,
-        status: (finance.paidEmis || []).includes(i + 1) ? 'Paid' : 'Pending'
+        status: paidEmisList.includes(i + 1) ? 'Paid' : 'Pending'
       }
     })
   })
 
-  const paidCount = emiSchedule.filter(e => e.status === 'Paid').length;
-  const pendingCount = tenure - paidCount;
+  const paidCount = emiSchedule.filter(e => e.status === 'Paid').length
+  const pendingCount = Math.max(0, tenure - paidCount)
 
   const toggleStatus = async (id) => {
+    const targetEmi = emiSchedule.find(e => e.id === id)
+    if (!targetEmi) return
+
+    const newStatus = targetEmi.status === 'Paid' ? 'Pending' : 'Paid'
     setEmiSchedule(prev => prev.map(emi => 
-      emi.id === id 
-        ? { ...emi, status: emi.status === 'Paid' ? 'Pending' : 'Paid' }
-        : emi
+      emi.id === id ? { ...emi, status: newStatus } : emi
     ))
     
     try {
-      await api.put(`/finance/${finance._id}/emi/${id}`, { status: emiSchedule.find(e => e.id === id).status === 'Paid' ? 'Pending' : 'Paid' })
+      await api.put(`/finance/${finance._id}/emi/${id}`, { status: newStatus })
     } catch (err) {
       console.error('Failed to sync EMI status', err)
     }
@@ -56,12 +61,12 @@ const FinanceDetailsModal = ({ finance, onClose }) => {
           <div className="form-grid-3" style={{ marginBottom: '24px', padding: '16px', background: 'var(--bg)', borderRadius: '8px', border: '1px solid var(--border)' }}>
             <div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Customer Name</div>
-              <div style={{ fontWeight: '600', fontSize: '16px' }}>{finance.customerName || finance.name}</div>
+              <div style={{ fontWeight: '600', fontSize: '16px' }}>{finance.customerName || finance.name || '—'}</div>
               <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>📞 {finance.mobileNumber || finance.phone || '—'}</div>
             </div>
             <div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Product & IMEI</div>
-              <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--primary)' }}>{finance.productDetails || finance.product}</div>
+              <div style={{ fontWeight: '600', fontSize: '14px', color: 'var(--primary)' }}>{finance.productDetails || finance.product || '—'}</div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>Invoice: {finance.billRef || '—'}</div>
             </div>
             <div>
@@ -142,50 +147,64 @@ const AgentPanel = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [selectedRecord, setSelectedRecord] = useState(null)
-
   const [filterDueOnly, setFilterDueOnly] = useState(false)
 
   useEffect(() => {
+    let isMounted = true
     const loadRecords = async () => {
+      setLoading(true)
+      setError('')
       try {
         const response = await api.get('/finance/agent/records')
-        setRecords(response.data.data || [])
+        if (!isMounted) return
+        const rawData = response?.data?.data !== undefined ? response.data.data : response?.data
+        setRecords(Array.isArray(rawData) ? rawData : [])
       } catch (requestError) {
         try {
           const fallback = await api.get('/finance/my-records')
-          setRecords(fallback.data.data || [])
+          if (!isMounted) return
+          const rawFb = fallback?.data?.data !== undefined ? fallback.data.data : fallback?.data
+          setRecords(Array.isArray(rawFb) ? rawFb : [])
         } catch (fbErr) {
-          setError(requestError.response?.data?.message || 'Your finance records could not be loaded.')
+          if (!isMounted) return
+          setError(requestError.response?.data?.message || fbErr.response?.data?.message || 'Your finance records could not be loaded.')
+          setRecords([])
         }
       } finally {
-        setLoading(false)
+        if (isMounted) setLoading(false)
       }
     }
     loadRecords()
+    return () => { isMounted = false }
   }, [])
 
-  const totalFinanced = records.reduce((sum, record) => sum + Number(record.usedLimit || 0), 0)
-  const totalOutstanding = records.reduce((sum, record) => sum + Number(record.availableLimit || 0), 0)
-  const totalPendingEMIs = records.reduce((sum, record) => {
-    const tenure = parseInt(record.tenure) || 6
-    const paidCount = (record.paidEmis || []).length
-    return sum + (tenure - paidCount)
+  const safeRecords = Array.isArray(records) ? records : []
+  const totalFinanced = safeRecords.reduce((sum, record) => sum + Number(record?.usedLimit || record?.totalAmount || 0), 0)
+  const totalOutstanding = safeRecords.reduce((sum, record) => sum + Number(record?.availableLimit || record?.totalLimit || 0), 0)
+  const totalPendingEMIs = safeRecords.reduce((sum, record) => {
+    const tenure = parseInt(record?.tenure) || 6
+    const paidEmis = Array.isArray(record?.paidEmis) ? record.paidEmis : []
+    return sum + Math.max(0, tenure - paidEmis.length)
   }, 0)
 
   const isDueSoon = (record) => {
+    if (!record) return false
     const tenure = parseInt(record.tenure) || 6
-    const paidCount = (record.paidEmis || []).length
+    const paidEmis = Array.isArray(record.paidEmis) ? record.paidEmis : []
+    const paidCount = paidEmis.length
     if (paidCount >= tenure) return false
     
-    const nextEmiDate = new Date(record.createdAt || record.paymentDate || new Date())
+    const recordDate = record.createdAt || record.paymentDate || record.date
+    const nextEmiDate = recordDate ? new Date(recordDate) : new Date()
+    if (isNaN(nextEmiDate.getTime())) return false
     nextEmiDate.setMonth(nextEmiDate.getMonth() + paidCount + 1)
     
     const diffDays = Math.ceil((nextEmiDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
-    return diffDays <= 3 // Due within 3 days or already overdue
+    return diffDays <= 3
   }
 
-  const displayedRecords = filterDueOnly ? records.filter(isDueSoon) : records
-  const totalDueSoon = records.filter(isDueSoon).length
+  const displayedRecords = filterDueOnly ? safeRecords.filter(isDueSoon) : safeRecords
+  const totalDueSoon = safeRecords.filter(isDueSoon).length
 
   return (
     <div>
@@ -199,7 +218,7 @@ const AgentPanel = () => {
       </div>
 
       <div className="stat-cards-grid" style={{ marginBottom: '20px' }}>
-        <SummaryCard title="Total Finance Cases" value={records.length} note="Assigned to you" color="var(--primary)" />
+        <SummaryCard title="Total Finance Cases" value={safeRecords.length} note="Assigned to you" color="var(--primary)" />
         <SummaryCard title="Total Financed Amount" value={formatCurrency(totalFinanced)} note="Across your cases" color="var(--orange)" />
         <SummaryCard title="Available Balance" value={formatCurrency(totalOutstanding)} note="As recorded on bills" color="var(--success, #10B981)" />
         <SummaryCard 
@@ -244,19 +263,19 @@ const AgentPanel = () => {
                 <tbody>
                   {displayedRecords.length === 0 ? <tr><td colSpan="8" style={{ textAlign: 'center', padding: '24px' }}>{filterDueOnly ? 'No customers are due for EMI right now.' : 'No finance records have been assigned to you yet.'}</td></tr> : null}
                   {displayedRecords.map((record, index) => (
-                    <tr key={record._id}>
+                    <tr key={record._id || index}>
                       <td style={{ color: 'var(--text-muted)' }}>{index + 1}</td>
-                      <td style={{ fontWeight: 500 }}>{record.customerName}</td>
+                      <td style={{ fontWeight: 500 }}>{record.customerName || record.name || '—'}</td>
                       <td>
-                        {record.mobileNumber ? (
-                          <a href={`tel:${record.mobileNumber}`} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '500' }}>
-                            📞 {record.mobileNumber}
+                        {record.mobileNumber || record.phone ? (
+                          <a href={`tel:${record.mobileNumber || record.phone}`} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '500' }}>
+                            📞 {record.mobileNumber || record.phone}
                           </a>
                         ) : '—'}
                       </td>
-                      <td style={{ color: 'var(--primary)', maxWidth: '260px' }}>{record.productDetails || '—'}</td>
+                      <td style={{ color: 'var(--primary)', maxWidth: '260px' }}>{record.productDetails || record.product || '—'}</td>
                       <td>{record.billRef || '—'}</td>
-                      <td style={{ fontWeight: 600 }}>{formatCurrency(record.usedLimit)}</td>
+                      <td style={{ fontWeight: 600 }}>{formatCurrency(record.usedLimit || record.totalAmount)}</td>
                       <td>{record.createdAt ? new Date(record.createdAt).toLocaleDateString('en-IN') : '—'}</td>
                       <td style={{ textAlign: 'right' }}>
                         <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '13px' }} onClick={() => setSelectedRecord(record)}>View</button>
