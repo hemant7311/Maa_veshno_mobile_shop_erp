@@ -20,7 +20,7 @@ const Home = () => {
       try {
         const [prodRes, sliderRes] = await Promise.all([
           api.get('/products/public'),
-          api.get('/sliders')
+          api.get('/sliders', { params: { audience: 'retailer' } })
         ])
         if (prodRes.data?.success) {
           const sorted = prodRes.data.data.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
@@ -115,9 +115,21 @@ const Home = () => {
                   <span className="hero-category-label">Featured</span>
                   <h1 className="hero-slide-title">{slide.title}</h1>
                   <p className="hero-slide-desc">{slide.subtitle}</p>
-                  <button className="hero-shop-btn" onClick={() => navigate('/all-products')}>
-                    Shop Now &gt;
-                  </button>
+                  {(slide.buttonText || slide.buttonLink) && (
+                    <button
+                      className="hero-shop-btn"
+                      onClick={() => {
+                        const target = slide.buttonLink || '/all-products'
+                        if (target.startsWith('http://') || target.startsWith('https://')) {
+                          window.open(target, '_blank')
+                        } else {
+                          navigate(target)
+                        }
+                      }}
+                    >
+                      {slide.buttonText || 'Shop Now >'}
+                    </button>
+                  )}
                 </div>
                 <div className="hero-slide-image-wrapper" style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center' }}>
                   {slide.mediaType === 'video' ? (

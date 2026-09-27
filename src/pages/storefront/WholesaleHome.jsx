@@ -31,7 +31,7 @@ const WholesaleHome = () => {
       setLoading(true)
       const [prodRes, sliderRes] = await Promise.all([
         api.get('/products/wholesale'),
-        api.get('/sliders')
+        api.get('/sliders', { params: { audience: 'wholesaler' } })
       ])
       const sorted = (prodRes.data?.data || []).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
       setProducts(sorted)
@@ -161,9 +161,23 @@ const WholesaleHome = () => {
                   <span className="ws-slide-badge">🏷️ Wholesale Offer</span>
                   <h2 className="ws-slide-title">{slide.title}</h2>
                   <p className="ws-slide-sub">{slide.subtitle}</p>
-                  <button className="ws-slide-btn" onClick={() => setSearch('')}>
-                    Explore Catalog →
-                  </button>
+                  {(slide.buttonText || slide.buttonLink) && (
+                    <button
+                      className="ws-slide-btn"
+                      onClick={() => {
+                        const target = slide.buttonLink || ''
+                        if (target.startsWith('http://') || target.startsWith('https://')) {
+                          window.open(target, '_blank')
+                        } else if (target) {
+                          navigate(target)
+                        } else {
+                          setSearch('')
+                        }
+                      }}
+                    >
+                      {slide.buttonText || 'Explore Catalog →'}
+                    </button>
+                  )}
                 </div>
                 <div className="ws-slide-media">
                   {slide.mediaType === 'video' ? (
