@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode } from 'html5-qrcode'
+import { isValidIMEI } from '../../utils/validators'
 
 const ImeiScannerModal = ({ onClose, onScan }) => {
   const [error, setError] = useState('')
@@ -30,7 +31,11 @@ const ImeiScannerModal = ({ onClose, onScan }) => {
               if (decodedText) {
                 const cleaned = String(decodedText).trim()
                 if (cleaned) {
-                  onScan(cleaned)
+                  if (isValidIMEI(cleaned)) {
+                    onScan(cleaned)
+                  } else {
+                    setError('Scanned value is invalid. IMEI must be exactly 15 digits.')
+                  }
                 }
               }
             },

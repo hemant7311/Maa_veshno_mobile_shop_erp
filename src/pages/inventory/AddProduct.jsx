@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
+import { isValidIMEI, isValidMobile } from '../../utils/validators'
 
 const AddProduct = () => {
   const navigate = useNavigate()
@@ -163,6 +164,11 @@ const AddProduct = () => {
       return
     }
 
+    if (form.imeiNumber && form.imeiNumber !== 'N/A' && !isValidIMEI(form.imeiNumber.trim())) {
+      setError('IMEI must be exactly 15 digits.')
+      return
+    }
+
     let finalSupplierId = ''
     let supplierName = form.brand.trim()
     let shopName = form.model.trim()
@@ -212,6 +218,10 @@ const AddProduct = () => {
       }
       if (!supplierPhone) {
         setError('Please enter a Supplier Phone Number.')
+        return
+      }
+      if (!isValidMobile(supplierPhone.trim())) {
+        setError('Mobile number must be exactly 10 digits.')
         return
       }
 

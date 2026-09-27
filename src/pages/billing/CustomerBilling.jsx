@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
 import html2canvas from 'html2canvas'
 import ImeiScannerModal from '../../components/common/ImeiScannerModal'
+import { isValidIMEI, isValidMobile } from '../../utils/validators'
 
 const DEFAULT_WARRANTY_OPTIONS = ['No Guarantee', '1 Year Insurance', '6 Months Warranty', 'Screen Replacement', 'Liquid Damage']
 
@@ -147,6 +148,18 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, customer, custome
     if (!customer.name || !customer.mobile) {
       alert('Please enter Customer Name and Mobile No.')
       return
+    }
+    if (!isValidMobile(customer.mobile.trim())) {
+      alert('Mobile number must be exactly 10 digits.')
+      return
+    }
+    for (const item of items) {
+      if (item.imei && item.imei !== 'N/A' && item.imei.trim() !== '') {
+        if (!isValidIMEI(item.imei.trim())) {
+          alert(`IMEI "${item.imei}" is invalid. IMEI must be exactly 15 digits.`)
+          return
+        }
+      }
     }
 
     try {

@@ -6,6 +6,7 @@ import {
 } from '../../services/api'
 import { subscribeSuppliersChanged } from '../../utils/supplierEvents'
 import ImeiScannerModal from '../../components/common/ImeiScannerModal'
+import { isValidIMEI } from '../../utils/validators'
 
 const formatDate = (d) => {
   if (!d) return ''
@@ -159,6 +160,10 @@ export const CreateReturnModal = ({ onClose, onSaved }) => {
   }
 
   const handleScanCode = (code) => {
+    if (!isValidIMEI(code.trim())) {
+      alert(`IMEI "${code}" is invalid. IMEI must be exactly 15 digits.`)
+      return
+    }
     const matched = availableImeis.find(i => String(i.imeiNumber).trim() === code.trim())
     if (matched) {
       if (!form.selectedImeis.includes(matched._id)) {

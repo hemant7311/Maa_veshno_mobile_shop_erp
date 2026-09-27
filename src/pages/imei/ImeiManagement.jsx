@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import api from '../../services/api'
 import ImeiScannerModal from '../../components/common/ImeiScannerModal'
+import { isValidIMEI } from '../../utils/validators'
 
 const statusLabel = (status) => status.charAt(0).toUpperCase() + status.slice(1)
 const badgeClass = (status) => ({ available: 'badge-success', sold: 'badge-warning', damaged: 'badge-danger', lost: 'badge-danger', reserved: 'badge-primary' }[status] || '')
@@ -17,6 +18,11 @@ const AddImeiModal = ({ products, onClose, onSaved }) => {
   const save = async () => {
     if (!productId || !numbers.length) {
       setError('Select a product and enter at least one IMEI number.')
+      return
+    }
+    const invalidIm = numbers.find(im => !isValidIMEI(im))
+    if (invalidIm) {
+      setError(`IMEI "${invalidIm}" is invalid. IMEI must be exactly 15 digits.`)
       return
     }
     if (new Set(numbers).size !== numbers.length) {

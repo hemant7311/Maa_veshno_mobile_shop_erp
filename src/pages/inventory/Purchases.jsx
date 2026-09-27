@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { getAllPurchases, createPurchase, getAllSuppliers, getAllProducts } from '../../services/api'
 import { subscribeSuppliersChanged } from '../../utils/supplierEvents'
+import { isValidIMEI, isValidMobile } from '../../utils/validators'
 
 const Purchases = () => {
   const [purchases, setPurchases] = useState([])
@@ -65,6 +66,11 @@ const Purchases = () => {
   const handleAddItem = () => {
     if (!currentItem.product) return alert('Select product')
     if (currentItem.quantity <= 0) return alert('Invalid quantity')
+    if (currentItem.imei && currentItem.imei !== 'N/A' && currentItem.imei.trim() !== '') {
+      if (!isValidIMEI(currentItem.imei.trim())) {
+        return alert('IMEI must be exactly 15 digits.')
+      }
+    }
     
     const prod = products.find(p => p._id === currentItem.product)
     
@@ -95,6 +101,11 @@ const Purchases = () => {
   const handleSubmit = async () => {
     if (form.items.length === 0) return alert('Add at least one item')
     if (!form.supplier && !form.supplierName) return alert('Supplier is required')
+    if (form.supplierMobile && form.supplierMobile.trim() !== '') {
+      if (!isValidMobile(form.supplierMobile.trim())) {
+        return alert('Mobile number must be exactly 10 digits.')
+      }
+    }
     
     try {
       setSaving(true)

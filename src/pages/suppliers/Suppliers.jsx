@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import api from '../../services/api'
+import { isValidMobile } from '../../utils/validators'
 
 const Suppliers = () => {
   const [suppliers, setSuppliers] = useState([])
@@ -133,6 +134,11 @@ const Suppliers = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault()
     if (!editForm.name.trim()) return alert('Name is required.')
+    if (editForm.phone && editForm.phone.trim() !== '') {
+      if (!isValidMobile(editForm.phone.trim())) {
+        return alert('Mobile number must be exactly 10 digits.')
+      }
+    }
     
     try {
       setSavingEdit(true)
