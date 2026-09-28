@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { Eye, Pencil, Trash2, Play } from 'lucide-react'
 import api from '../../services/api'
 
 const Sliders = () => {
@@ -176,9 +177,9 @@ const Sliders = () => {
   }
 
   const getAudienceBadge = (audience) => {
-    if (audience === 'retailer') return <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>Retailer</span>
-    if (audience === 'wholesaler') return <span className="badge" style={{ background: '#fef3c7', color: '#92400e' }}>Wholesaler</span>
-    return <span className="badge" style={{ background: '#dcfce7', color: '#15803d' }}>Both Storefronts</span>
+    if (audience === 'retailer') return <span className="badge" style={{ background: '#e0f2fe', color: '#0369a1', fontWeight: 600, fontSize: '11px', padding: '4px 8px' }}>Retailer</span>
+    if (audience === 'wholesaler') return <span className="badge" style={{ background: '#fef3c7', color: '#92400e', fontWeight: 600, fontSize: '11px', padding: '4px 8px' }}>Wholesaler</span>
+    return <span className="badge" style={{ background: '#dcfce7', color: '#15803d', fontWeight: 600, fontSize: '11px', padding: '4px 8px' }}>Both Storefronts</span>
   }
 
   const currentPreviewSource = filePreviewUrl || formData.mediaUrl
@@ -194,18 +195,18 @@ const Sliders = () => {
       </div>
 
       {/* Admin Table */}
-      <div className="card">
-        <div className="table-responsive">
-          <table className="table">
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ overflowX: 'auto', width: '100%' }}>
+          <table className="data-table" style={{ width: '100%', margin: 0, borderCollapse: 'collapse' }}>
             <thead>
               <tr>
-                <th style={{ width: '60px' }}>Order</th>
-                <th style={{ width: '120px' }}>Media</th>
-                <th>Title & Subtitle</th>
-                <th>Type</th>
-                <th>Audience</th>
-                <th>Status</th>
-                <th style={{ textAlign: 'right' }}>Actions</th>
+                <th style={{ width: '60px', textAlign: 'center', verticalAlign: 'middle' }}>Order</th>
+                <th style={{ width: '120px', verticalAlign: 'middle' }}>Media</th>
+                <th style={{ verticalAlign: 'middle' }}>Title & Subtitle</th>
+                <th style={{ width: '90px', verticalAlign: 'middle' }}>Type</th>
+                <th style={{ width: '140px', verticalAlign: 'middle' }}>Audience</th>
+                <th style={{ width: '90px', verticalAlign: 'middle' }}>Status</th>
+                <th style={{ width: '130px', textAlign: 'right', verticalAlign: 'middle' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -214,47 +215,134 @@ const Sliders = () => {
               ) : sliders.length === 0 ? (
                 <tr><td colSpan="7" style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>No home sliders found. Click "+ Add New Slide" to create one.</td></tr>
               ) : sliders.map(s => (
-                <tr key={s._id}>
-                  <td style={{ fontWeight: 600 }}>{s.order}</td>
-                  <td>
-                    {s.mediaType === 'image' ? (
-                      <img
-                        src={s.mediaUrl}
-                        alt={s.title}
-                        style={{ height: '48px', width: '80px', objectFit: 'cover', borderRadius: '6px', border: '1px solid #e2e8f0' }}
-                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/80x48?text=Image'; }}
-                      />
-                    ) : (
-                      <div style={{ position: 'relative', width: '80px', height: '48px', borderRadius: '6px', overflow: 'hidden', background: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <video src={s.mediaUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
-                        <span style={{ position: 'absolute', color: 'white', fontSize: '14px', background: 'rgba(0,0,0,0.5)', padding: '2px 6px', borderRadius: '4px' }}>▶</span>
-                      </div>
-                    )}
+                <tr key={s._id} style={{ verticalAlign: 'middle' }}>
+                  <td style={{ textAlign: 'center', fontWeight: 700, fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {s.order ?? 0}
                   </td>
-                  <td>
-                    <div style={{ fontWeight: 600, fontSize: '14px' }}>{s.title}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.subtitle || 'No description'}</div>
+                  <td style={{ verticalAlign: 'middle' }}>
+                    <div 
+                      onClick={() => setPreviewSlide(s)}
+                      title="Click to preview media"
+                      style={{
+                        width: '100px',
+                        height: '56px',
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        border: '1px solid var(--border)',
+                        position: 'relative',
+                        cursor: 'pointer',
+                        background: '#0f172a',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      {s.mediaType === 'image' ? (
+                        <img
+                          src={s.mediaUrl}
+                          alt={s.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/100x56?text=Image'; }}
+                        />
+                      ) : (
+                        <>
+                          <video 
+                            src={s.mediaUrl} 
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} 
+                            muted 
+                            preload="metadata"
+                          />
+                          <div style={{
+                            position: 'absolute',
+                            inset: 0,
+                            background: 'rgba(15, 23, 42, 0.35)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                          }}>
+                            <div style={{
+                              width: '26px',
+                              height: '26px',
+                              borderRadius: '50%',
+                              background: 'rgba(255, 255, 255, 0.9)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                            }}>
+                              <Play size={13} fill="#0f172a" color="#0f172a" style={{ marginLeft: '2px' }} />
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ verticalAlign: 'middle', maxWidth: '280px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={s.title}>
+                      {s.title}
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '2px' }} title={s.subtitle || ''}>
+                      {s.subtitle || 'No description'}
+                    </div>
                     {(s.buttonText || s.buttonLink) && (
-                      <div style={{ fontSize: '11px', color: '#2563eb', marginTop: '2px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--primary)', marginTop: '2px', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         Button: "{s.buttonText || 'Shop Now'}" &rarr; {s.buttonLink || '/all-products'}
                       </div>
                     )}
                   </td>
-                  <td>
-                    <span className="badge" style={{ background: s.mediaType === 'video' ? '#f3e8ff' : '#f1f5f9', color: s.mediaType === 'video' ? '#7e22ce' : '#475569', fontWeight: 600 }}>
+                  <td style={{ verticalAlign: 'middle' }}>
+                    <span className="badge" style={{ 
+                      background: s.mediaType === 'video' ? '#f3e8ff' : '#e0f2fe', 
+                      color: s.mediaType === 'video' ? '#7e22ce' : '#0369a1', 
+                      fontWeight: 600,
+                      fontSize: '11px',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
+                    }}>
                       {s.mediaType ? s.mediaType.toUpperCase() : 'IMAGE'}
                     </span>
                   </td>
-                  <td>{getAudienceBadge(s.targetAudience)}</td>
-                  <td>
-                    <span className={`badge ${s.isActive ? 'badge-success' : 'badge-danger'}`}>
+                  <td style={{ verticalAlign: 'middle' }}>
+                    {getAudienceBadge(s.targetAudience)}
+                  </td>
+                  <td style={{ verticalAlign: 'middle' }}>
+                    <span className={`badge ${s.isActive ? 'badge-success' : 'badge-danger'}`} style={{ padding: '4px 8px', fontSize: '11px' }}>
                       {s.isActive ? 'Active' : 'Hidden'}
                     </span>
                   </td>
-                  <td style={{ textAlign: 'right' }}>
-                    <button className="action-btn" style={{ marginRight: '6px' }} onClick={() => setPreviewSlide(s)}>Preview</button>
-                    <button className="action-btn" style={{ marginRight: '6px' }} onClick={() => handleOpen(s)}>Edit</button>
-                    <button className="action-btn danger" onClick={() => handleDelete(s._id)}>Delete</button>
+                  <td style={{ verticalAlign: 'middle', textAlign: 'right' }}>
+                    <div className="action-btns" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
+                      <button
+                        type="button"
+                        className="action-btn action-btn-preview"
+                        onClick={() => setPreviewSlide(s)}
+                        title="Preview"
+                        aria-label="Preview"
+                      >
+                        <Eye size={16} strokeWidth={2} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="action-btn action-btn-edit"
+                        onClick={() => handleOpen(s)}
+                        title="Edit"
+                        aria-label="Edit"
+                      >
+                        <Pencil size={16} strokeWidth={2} />
+                      </button>
+
+                      <button
+                        type="button"
+                        className="action-btn action-btn-delete danger"
+                        onClick={() => handleDelete(s._id)}
+                        title="Delete"
+                        aria-label="Delete"
+                      >
+                        <Trash2 size={16} strokeWidth={2} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
