@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Eye, Pencil, Trash2, Play, UploadCloud, CheckCircle, X } from 'lucide-react'
+import { Eye, Pencil, Trash2, Play, UploadCloud, CheckCircle, X, Image as ImageIcon, Type, FileText, Users, Upload, Link, Hash, Video, Link2 } from 'lucide-react'
 import api from '../../services/api'
 
 const Sliders = () => {
@@ -391,14 +391,19 @@ const Sliders = () => {
             }}
           >
             {/* Fixed Header */}
-            <div className="modal-header" style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--white)', flexShrink: 0 }}>
-              <div>
-                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                  {editId ? 'Edit Slide' : 'Add New Slide'}
-                </h2>
-                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Configure hero slide banners and video promotions
-                </span>
+            <div className="modal-header" style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--white)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ImageIcon size={20} strokeWidth={2.5} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                    {editId ? 'Edit Slide' : 'Add New Slide'}
+                  </h2>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    Configure hero slide banners and video promotions
+                  </span>
+                </div>
               </div>
               <button 
                 type="button" 
@@ -406,247 +411,337 @@ const Sliders = () => {
                 onClick={() => setShowModal(false)}
                 aria-label="Close modal"
                 title="Close"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
               >
-                <X size={20} color="var(--text-secondary)" />
+                <X size={20} />
               </button>
             </div>
 
             {/* Scrollable Form Body */}
-            <div className="modal-body" ref={modalBodyRef} style={{ flex: 1, overflowY: 'auto', padding: '24px', background: 'var(--white)' }}>
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div className="modal-body" ref={modalBodyRef} style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', background: 'var(--white)' }}>
+              <form onSubmit={handleSubmit} className="premium-form-layout">
+                
+                {/* 1. Basic Information */}
+                <div className="form-section-header">
+                  <div className="form-section-number">1</div>
+                  <div className="form-section-title">Basic Information</div>
+                </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label htmlFor="slider-title" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div className="form-group" style={{ marginBottom: '16px' }}>
+                  <label htmlFor="slider-title" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     Title (Heading Text) <span style={{ color: 'var(--danger)' }}>*</span>
                   </label>
-                  <input
-                    id="slider-title"
-                    className="input-field"
-                    required
-                    placeholder="E.g., Mega Mobile Sale 50% Off"
-                    value={formData.title}
-                    onChange={e => setFormData({ ...formData, title: e.target.value })}
-                  />
+                  <div className="input-with-icon-wrapper">
+                    <div className="input-prefix-icon"><Type size={16} /></div>
+                    <input
+                      id="slider-title"
+                      className="input-field input-field-with-icon form-input-custom"
+                      required
+                      placeholder="E.g., Mega Mobile Sale 50% Off"
+                      value={formData.title}
+                      onChange={e => setFormData({ ...formData, title: e.target.value })}
+                    />
+                  </div>
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label htmlFor="slider-subtitle" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div className="form-group" style={{ marginBottom: '20px' }}>
+                  <label htmlFor="slider-subtitle" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                     Subtitle (Description Text)
                   </label>
-                  <input
-                    id="slider-subtitle"
-                    className="input-field"
-                    placeholder="E.g., Best deals on iPhone, Samsung, Realme and accessories"
-                    value={formData.subtitle}
-                    onChange={e => setFormData({ ...formData, subtitle: e.target.value })}
-                  />
+                  <div className="input-with-icon-wrapper">
+                    <div className="input-prefix-icon"><FileText size={16} /></div>
+                    <input
+                      id="slider-subtitle"
+                      className="input-field input-field-with-icon form-input-custom"
+                      placeholder="E.g., Best deals on iPhone, Samsung, Realme and accessories"
+                      value={formData.subtitle}
+                      onChange={e => setFormData({ ...formData, subtitle: e.target.value })}
+                    />
+                  </div>
                 </div>
 
-                <div className="slider-form-grid-2">
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="slider-media-type" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                <div className="slider-form-grid-2" style={{ marginBottom: '24px' }}>
+                  <div className="form-group">
+                    <label htmlFor="slider-media-type" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                       Media Type
                     </label>
-                    <select
-                      id="slider-media-type"
-                      className="input-field"
-                      value={formData.mediaType}
-                      onChange={e => setFormData({ ...formData, mediaType: e.target.value })}
-                    >
-                      <option value="image">Image (JPG, PNG, WEBP)</option>
-                      <option value="video">Video (MP4, WEBM)</option>
-                    </select>
+                    <div className="input-with-icon-wrapper">
+                      <div className="input-prefix-icon">
+                        {formData.mediaType === 'video' ? <Video size={16} /> : <ImageIcon size={16} />}
+                      </div>
+                      <select
+                        id="slider-media-type"
+                        className="input-field input-field-with-icon form-input-custom"
+                        value={formData.mediaType}
+                        onChange={e => setFormData({ ...formData, mediaType: e.target.value })}
+                      >
+                        <option value="image">Image (JPG, PNG, WEBP)</option>
+                        <option value="video">Video (MP4, WEBM)</option>
+                      </select>
+                    </div>
                   </div>
 
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="slider-target-audience" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <div className="form-group">
+                    <label htmlFor="slider-target-audience" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                       Target Audience
                     </label>
-                    <select
-                      id="slider-target-audience"
-                      className="input-field"
-                      value={formData.targetAudience}
-                      onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
-                    >
-                      <option value="both">Both Storefronts (Retailer & Wholesaler)</option>
-                      <option value="retailer">Retailer Only</option>
-                      <option value="wholesaler">Wholesaler Only</option>
-                    </select>
+                    <div className="input-with-icon-wrapper">
+                      <div className="input-prefix-icon"><Users size={16} /></div>
+                      <select
+                        id="slider-target-audience"
+                        className="input-field input-field-with-icon form-input-custom"
+                        value={formData.targetAudience}
+                        onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
+                      >
+                        <option value="both">Both Storefronts (Retailer & Wholesaler)</option>
+                        <option value="retailer">Retailer Only</option>
+                        <option value="wholesaler">Wholesaler Only</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
-                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <label htmlFor="slider-media-source" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    Media Input Source
-                  </label>
-                  <select
-                    id="slider-media-source"
-                    className="input-field"
-                    value={formData.mediaSource}
-                    onChange={e => {
-                      setSelectedFile(null)
-                      if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) URL.revokeObjectURL(filePreviewUrl)
-                      setFilePreviewUrl('')
-                      setFormData({ ...formData, mediaSource: e.target.value })
-                    }}
-                  >
-                    <option value="upload">Upload File (Local Storage)</option>
-                    <option value="url">External Link (Direct Media URL)</option>
-                  </select>
+                {/* 2. Media Configuration */}
+                <div className="form-section-header">
+                  <div className="form-section-number">2</div>
+                  <div className="form-section-title">Media Configuration</div>
                 </div>
 
-                {formData.mediaSource === 'upload' ? (
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="slider-file-input" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      Upload Media File {editId && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional to keep current)</span>}
+                <div style={{ padding: '20px', border: '1px solid var(--border)', borderRadius: '12px', background: '#f8fafc', marginBottom: '24px' }}>
+                  <div className="form-group" style={{ marginBottom: '16px' }}>
+                    <label htmlFor="slider-media-source" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                      Media Input Source
                     </label>
-                    <input
-                      ref={fileInputRef}
-                      id="slider-file-input"
-                      type="file"
-                      style={{ display: 'none' }}
-                      accept={formData.mediaType === 'video' ? 'video/mp4,video/webm,video/ogg' : 'image/jpeg,image/png,image/webp,image/gif'}
-                      onChange={handleFileChange}
-                    />
-                    <div 
-                      className={`file-upload-dropzone ${selectedFile ? 'has-file' : ''}`}
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      {selectedFile ? (
-                        <>
-                          <CheckCircle size={28} color="var(--success)" />
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success)' }}>
-                            {selectedFile.name}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                            {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Click to replace file
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud size={28} color="var(--primary)" />
-                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                            Click to select {formData.mediaType === 'video' ? 'video' : 'image'} file
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            Supports {formData.mediaType === 'video' ? 'MP4, WEBM, OGG (Max 50MB)' : 'JPG, PNG, WEBP, GIF (Max 50MB)'}
-                          </div>
-                        </>
+                    <div className="input-with-icon-wrapper">
+                      <div className="input-prefix-icon"><Upload size={16} /></div>
+                      <select
+                        id="slider-media-source"
+                        className="input-field input-field-with-icon form-input-custom"
+                        style={{ background: 'var(--white)' }}
+                        value={formData.mediaSource}
+                        onChange={e => {
+                          setSelectedFile(null)
+                          if (filePreviewUrl && filePreviewUrl.startsWith('blob:')) URL.revokeObjectURL(filePreviewUrl)
+                          setFilePreviewUrl('')
+                          setFormData({ ...formData, mediaSource: e.target.value })
+                        }}
+                      >
+                        <option value="upload">Upload File (Local Storage)</option>
+                        <option value="url">External Link (Direct Media URL)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {formData.mediaSource === 'upload' ? (
+                    <div className="premium-upload-container">
+                      <div className="form-group">
+                        <label htmlFor="slider-file-input" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                          Upload {formData.mediaType === 'image' ? 'Image' : 'Video'} File
+                        </label>
+                        <input
+                          ref={fileInputRef}
+                          id="slider-file-input"
+                          type="file"
+                          style={{ display: 'none' }}
+                          accept={formData.mediaType === 'video' ? 'video/mp4,video/webm,video/ogg' : 'image/jpeg,image/png,image/webp,image/gif'}
+                          onChange={handleFileChange}
+                        />
+                        <div 
+                          className={`file-upload-dropzone ${selectedFile ? 'has-file' : ''}`}
+                          style={{ height: '140px', background: 'var(--white)', justifyContent: 'center' }}
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          {selectedFile ? (
+                            <>
+                              <CheckCircle size={28} color="var(--success)" />
+                              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success)' }}>
+                                {selectedFile.name}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Click to replace file
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <UploadCloud size={28} color="var(--primary)" />
+                              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                Click to upload {formData.mediaType === 'video' ? 'video' : 'image'}
+                              </div>
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                or drag and drop<br />
+                                Supports {formData.mediaType === 'video' ? 'MP4, WEBM, OGG (Max 50MB)' : 'JPG, PNG, WEBP (Max 50MB)'}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>Preview</label>
+                        <div style={{ width: '100%', height: '140px', borderRadius: '8px', overflow: 'hidden', border: '1px dashed var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {currentPreviewSource ? (
+                            formData.mediaType === 'video' ? (
+                              <video
+                                src={currentPreviewSource}
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <img
+                                src={currentPreviewSource}
+                                alt="Preview"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x140?text=Invalid+Image+URL'; }}
+                              />
+                            )
+                          ) : (
+                            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No media selected</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="form-group">
+                      <label htmlFor="slider-external-url" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                        External Media URL <span style={{ color: 'var(--danger)' }}>*</span>
+                      </label>
+                      <div className="input-with-icon-wrapper">
+                        <div className="input-prefix-icon"><Link size={16} /></div>
+                        <input
+                          id="slider-external-url"
+                          className="input-field input-field-with-icon form-input-custom"
+                          style={{ background: 'var(--white)' }}
+                          placeholder="https://example.com/banner.jpg"
+                          required={!formData.mediaUrl && !editId}
+                          value={formData.mediaUrl}
+                          onChange={e => setFormData({ ...formData, mediaUrl: e.target.value })}
+                        />
+                      </div>
+                      
+                      {currentPreviewSource && (
+                        <div style={{ width: '100%', height: '160px', marginTop: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                           {formData.mediaType === 'video' ? (
+                              <video
+                                src={currentPreviewSource}
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <img
+                                src={currentPreviewSource}
+                                alt="Preview"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x140?text=Invalid+Image+URL'; }}
+                              />
+                            )}
+                        </div>
                       )}
                     </div>
-                    {formData.mediaUrl && !selectedFile && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Current media path: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>{formData.mediaUrl}</code>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="slider-external-url" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      External Media URL <span style={{ color: 'var(--danger)' }}>*</span>
-                    </label>
-                    <input
-                      id="slider-external-url"
-                      className="input-field"
-                      placeholder="https://example.com/banner.jpg"
-                      required={!formData.mediaUrl && !editId}
-                      value={formData.mediaUrl}
-                      onChange={e => setFormData({ ...formData, mediaUrl: e.target.value })}
-                    />
-                  </div>
-                )}
+                  )}
+                </div>
 
-                <div className="slider-form-grid-2">
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="slider-button-text" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {/* 3. Call to Action */}
+                <div className="form-section-header">
+                  <div className="form-section-number">3</div>
+                  <div className="form-section-title">Call to Action</div>
+                </div>
+
+                <div className="slider-form-grid-2" style={{ marginBottom: '24px' }}>
+                  <div className="form-group">
+                    <label htmlFor="slider-button-text" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                       Button Text <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional)</span>
                     </label>
-                    <input
-                      id="slider-button-text"
-                      className="input-field"
-                      placeholder="E.g., Shop Now, Explore Catalog"
-                      value={formData.buttonText}
-                      onChange={e => setFormData({ ...formData, buttonText: e.target.value })}
-                    />
+                    <div className="input-with-icon-wrapper">
+                      <div className="input-prefix-icon"><Link2 size={16} /></div>
+                      <input
+                        id="slider-button-text"
+                        className="input-field input-field-with-icon form-input-custom"
+                        placeholder="E.g., Shop Now, Explore Catalog"
+                        value={formData.buttonText}
+                        onChange={e => setFormData({ ...formData, buttonText: e.target.value })}
+                      />
+                    </div>
                   </div>
 
-                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label htmlFor="slider-button-link" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                  <div className="form-group">
+                    <label htmlFor="slider-button-link" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '6px' }}>
                       Button Link <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional)</span>
                     </label>
-                    <input
-                      id="slider-button-link"
-                      className="input-field"
-                      placeholder="E.g., /all-products or https://..."
-                      value={formData.buttonLink}
-                      onChange={e => setFormData({ ...formData, buttonLink: e.target.value })}
-                    />
+                    <div className="input-with-icon-wrapper">
+                      <div className="input-prefix-icon"><Link2 size={16} /></div>
+                      <input
+                        id="slider-button-link"
+                        className="input-field input-field-with-icon form-input-custom"
+                        placeholder="E.g., /all-products or https://..."
+                        value={formData.buttonLink}
+                        onChange={e => setFormData({ ...formData, buttonLink: e.target.value })}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--bg)', padding: '14px 16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                  <label htmlFor="slider-is-active" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
-                    <input
-                      id="slider-is-active"
-                      type="checkbox"
-                      checked={formData.isActive}
-                      onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-                      style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
-                    />
-                    Active (Visible on storefronts)
+                {/* 4. Display Settings */}
+                <div className="form-section-header">
+                  <div className="form-section-number">4</div>
+                  <div className="form-section-title">Display Settings</div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--white)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: '24px' }}>
+                  <label htmlFor="slider-is-active" style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                    <label className="custom-toggle-switch">
+                      <input 
+                        id="slider-is-active" 
+                        type="checkbox" 
+                        checked={formData.isActive}
+                        onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
+                      />
+                      <span className="custom-toggle-slider"></span>
+                    </label>
+                    Active <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Visible on public storefront)</span>
                   </label>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
-                    <label htmlFor="slider-order" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                      Display Order:
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
+                    <label htmlFor="slider-order" style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Display Order
                     </label>
-                    <input
-                      id="slider-order"
-                      type="number"
-                      className="input-field"
-                      style={{ width: '80px', height: '36px', textAlign: 'center' }}
-                      value={formData.order}
-                      onChange={e => setFormData({ ...formData, order: Number(e.target.value) })}
-                    />
+                    <div className="input-with-icon-wrapper" style={{ width: '100px' }}>
+                      <div className="input-prefix-icon"><Hash size={16} /></div>
+                      <input
+                        id="slider-order"
+                        type="number"
+                        className="input-field input-field-with-icon form-input-custom"
+                        style={{ textAlign: 'center' }}
+                        value={formData.order}
+                        onChange={e => setFormData({ ...formData, order: Number(e.target.value) })}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Instant Media Preview inside Form */}
-                {currentPreviewSource && (
-                  <div style={{ padding: '14px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
-                      Media Live Preview
-                    </div>
-                    {formData.mediaType === 'video' ? (
-                      <video
-                        src={currentPreviewSource}
-                        controls
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        style={{ width: '100%', maxHeight: '180px', borderRadius: '6px', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <img
-                        src={currentPreviewSource}
-                        alt="Preview"
-                        style={{ width: '100%', maxHeight: '180px', borderRadius: '6px', objectFit: 'cover' }}
-                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x180?text=Invalid+Image+URL'; }}
-                      />
-                    )}
-                  </div>
-                )}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '10px' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline" 
+                    onClick={() => setShowModal(false)}
+                    style={{ height: '44px', padding: '0 24px', fontSize: '14px', borderRadius: '8px' }}
+                  >
+                    <X size={16} style={{ marginRight: '6px' }} /> Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn btn-primary" 
+                    disabled={submitting}
+                    style={{ height: '44px', padding: '0 24px', fontSize: '14px', fontWeight: 600, borderRadius: '8px' }}
+                  >
+                    {submitting ? 'Saving Slide...' : (editId ? 'Update Slide' : 'Save & Publish Slide')}
+                  </button>
+                </div>
 
-                <button 
-                  type="submit" 
-                  className="btn btn-primary" 
-                  disabled={submitting}
-                  style={{ width: '100%', height: '44px', fontSize: '14px', fontWeight: 600, borderRadius: '8px', marginTop: '6px' }}
-                >
-                  {submitting ? 'Saving Slide...' : (editId ? 'Update Slide' : 'Save & Publish Slide')}
-                </button>
               </form>
             </div>
           </div>
