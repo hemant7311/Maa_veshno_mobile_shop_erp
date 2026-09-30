@@ -218,8 +218,8 @@ const Sliders = () => {
 
       {/* Admin Table */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ overflowX: 'auto', width: '100%' }}>
-          <table className="data-table" style={{ width: '100%', margin: 0, borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto', width: '100%', WebkitOverflowScrolling: 'touch' }}>
+          <table className="data-table" style={{ width: '100%', minWidth: '850px', margin: 0, borderCollapse: 'collapse' }}>
             <thead>
               <tr>
                 <th style={{ width: '60px', textAlign: 'center', verticalAlign: 'middle' }}>Order</th>
@@ -380,7 +380,7 @@ const Sliders = () => {
             className="modal-box" 
             onClick={e => e.stopPropagation()} 
             style={{ 
-              maxWidth: '660px', 
+              maxWidth: '850px', 
               width: '100%', 
               maxHeight: '90vh', 
               display: 'flex', 
