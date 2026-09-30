@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react'
-import { Eye, Pencil, Trash2, Play } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Eye, Pencil, Trash2, Play, UploadCloud, CheckCircle, X } from 'lucide-react'
 import api from '../../services/api'
 
 const Sliders = () => {
   const [sliders, setSliders] = useState([])
   const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [previewSlide, setPreviewSlide] = useState(null)
   const [editId, setEditId] = useState(null)
+
+  const modalBodyRef = useRef(null)
+  const fileInputRef = useRef(null)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -28,6 +32,20 @@ const Sliders = () => {
   useEffect(() => {
     fetchSliders()
   }, [])
+
+  // Scroll to top when modal opens & handle Escape key
+  useEffect(() => {
+    if (showModal) {
+      if (modalBodyRef.current) {
+        modalBodyRef.current.scrollTop = 0
+      }
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setShowModal(false)
+      }
+      window.addEventListener('keydown', handleKeyDown)
+      return () => window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showModal])
 
   // Clean up object URLs to prevent memory leaks
   useEffect(() => {
@@ -122,6 +140,7 @@ const Sliders = () => {
       return
     }
 
+    setSubmitting(true)
     try {
       if (selectedFile) {
         const payload = new FormData()
@@ -144,6 +163,7 @@ const Sliders = () => {
       } else {
         if (!formData.mediaUrl && !editId) {
           alert('Please upload a file or provide a valid media URL.')
+          setSubmitting(false)
           return
         }
         if (editId) {
@@ -163,6 +183,8 @@ const Sliders = () => {
     } catch (err) {
       console.error(err)
       alert(err.response?.data?.message || 'Error saving slider')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -353,18 +375,53 @@ const Sliders = () => {
 
       {/* CREATE / EDIT MODAL */}
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-box" style={{ maxWidth: '640px', width: '90%' }}>
-            <div className="modal-header">
-              <h2>{editId ? 'Edit Slide' : 'Add New Slide'}</h2>
-              <button className="btn btn-outline" onClick={() => setShowModal(false)}>Close</button>
+        <div className="modal-overlay" onClick={() => setShowModal(false)} style={{ zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div 
+            className="modal-box" 
+            onClick={e => e.stopPropagation()} 
+            style={{ 
+              maxWidth: '660px', 
+              width: '100%', 
+              maxHeight: '90vh', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              overflow: 'hidden', 
+              borderRadius: '12px',
+              boxShadow: 'var(--shadow-lg)'
+            }}
+          >
+            {/* Fixed Header */}
+            <div className="modal-header" style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--white)', flexShrink: 0 }}>
+              <div>
+                <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                  {editId ? 'Edit Slide' : 'Add New Slide'}
+                </h2>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Configure hero slide banners and video promotions
+                </span>
+              </div>
+              <button 
+                type="button" 
+                className="modal-close" 
+                onClick={() => setShowModal(false)}
+                aria-label="Close modal"
+                title="Close"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '6px' }}
+              >
+                <X size={20} color="var(--text-secondary)" />
+              </button>
             </div>
-            <div className="modal-body" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
-                <div className="form-group">
-                  <label style={{ fontWeight: 600 }}>Title (Heading Text) *</label>
+            {/* Scrollable Form Body */}
+            <div className="modal-body" ref={modalBodyRef} style={{ flex: 1, overflowY: 'auto', padding: '24px', background: 'var(--white)' }}>
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label htmlFor="slider-title" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Title (Heading Text) <span style={{ color: 'var(--danger)' }}>*</span>
+                  </label>
                   <input
+                    id="slider-title"
                     className="input-field"
                     required
                     placeholder="E.g., Mega Mobile Sale 50% Off"
@@ -373,9 +430,12 @@ const Sliders = () => {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label style={{ fontWeight: 600 }}>Subtitle (Description Text)</label>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label htmlFor="slider-subtitle" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Subtitle (Description Text)
+                  </label>
                   <input
+                    id="slider-subtitle"
                     className="input-field"
                     placeholder="E.g., Best deals on iPhone, Samsung, Realme and accessories"
                     value={formData.subtitle}
@@ -383,10 +443,13 @@ const Sliders = () => {
                   />
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label style={{ fontWeight: 600 }}>Media Type</label>
+                <div className="slider-form-grid-2">
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="slider-media-type" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Media Type
+                    </label>
                     <select
+                      id="slider-media-type"
                       className="input-field"
                       value={formData.mediaType}
                       onChange={e => setFormData({ ...formData, mediaType: e.target.value })}
@@ -396,9 +459,12 @@ const Sliders = () => {
                     </select>
                   </div>
 
-                  <div className="form-group">
-                    <label style={{ fontWeight: 600 }}>Target Audience</label>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="slider-target-audience" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Target Audience
+                    </label>
                     <select
+                      id="slider-target-audience"
                       className="input-field"
                       value={formData.targetAudience}
                       onChange={e => setFormData({ ...formData, targetAudience: e.target.value })}
@@ -410,9 +476,12 @@ const Sliders = () => {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label style={{ fontWeight: 600 }}>Media Input Source</label>
+                <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label htmlFor="slider-media-source" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    Media Input Source
+                  </label>
                   <select
+                    id="slider-media-source"
                     className="input-field"
                     value={formData.mediaSource}
                     onChange={e => {
@@ -422,35 +491,63 @@ const Sliders = () => {
                       setFormData({ ...formData, mediaSource: e.target.value })
                     }}
                   >
-                    <option value="upload">Upload File (Local Multer Storage)</option>
-                    <option value="url">External Link (Direct URL)</option>
+                    <option value="upload">Upload File (Local Storage)</option>
+                    <option value="url">External Link (Direct Media URL)</option>
                   </select>
                 </div>
 
                 {formData.mediaSource === 'upload' ? (
-                  <div className="form-group">
-                    <label style={{ fontWeight: 600 }}>Choose File {editId && '(Leave empty to keep existing media)'}</label>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="slider-file-input" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Upload Media File {editId && <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional to keep current)</span>}
+                    </label>
                     <input
+                      ref={fileInputRef}
+                      id="slider-file-input"
                       type="file"
-                      className="input-field"
+                      style={{ display: 'none' }}
                       accept={formData.mediaType === 'video' ? 'video/mp4,video/webm,video/ogg' : 'image/jpeg,image/png,image/webp,image/gif'}
                       onChange={handleFileChange}
                     />
-                    {selectedFile && (
-                      <div style={{ marginTop: '8px', fontSize: '12px', color: '#16a34a', fontWeight: 500 }}>
-                        ✓ File selected: {selectedFile.name} ({(selectedFile.size / (1024 * 1024)).toFixed(2)} MB)
-                      </div>
-                    )}
+                    <div 
+                      className={`file-upload-dropzone ${selectedFile ? 'has-file' : ''}`}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {selectedFile ? (
+                        <>
+                          <CheckCircle size={28} color="var(--success)" />
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--success)' }}>
+                            {selectedFile.name}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Click to replace file
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud size={28} color="var(--primary)" />
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            Click to select {formData.mediaType === 'video' ? 'video' : 'image'} file
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            Supports {formData.mediaType === 'video' ? 'MP4, WEBM, OGG (Max 50MB)' : 'JPG, PNG, WEBP, GIF (Max 50MB)'}
+                          </div>
+                        </>
+                      )}
+                    </div>
                     {formData.mediaUrl && !selectedFile && (
-                      <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                        Current file path: {formData.mediaUrl}
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Current media path: <code style={{ background: '#f1f5f9', padding: '2px 6px', borderRadius: '4px' }}>{formData.mediaUrl}</code>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="form-group">
-                    <label style={{ fontWeight: 600 }}>External Media URL</label>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="slider-external-url" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      External Media URL <span style={{ color: 'var(--danger)' }}>*</span>
+                    </label>
                     <input
+                      id="slider-external-url"
                       className="input-field"
                       placeholder="https://example.com/banner.jpg"
                       required={!formData.mediaUrl && !editId}
@@ -460,10 +557,13 @@ const Sliders = () => {
                   </div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                  <div className="form-group">
-                    <label style={{ fontWeight: 600 }}>Button Text (Optional)</label>
+                <div className="slider-form-grid-2">
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="slider-button-text" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Button Text <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional)</span>
+                    </label>
                     <input
+                      id="slider-button-text"
                       className="input-field"
                       placeholder="E.g., Shop Now, Explore Catalog"
                       value={formData.buttonText}
@@ -471,9 +571,12 @@ const Sliders = () => {
                     />
                   </div>
 
-                  <div className="form-group">
-                    <label style={{ fontWeight: 600 }}>Button Link (Optional)</label>
+                  <div className="form-group" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label htmlFor="slider-button-link" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Button Link <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional)</span>
+                    </label>
                     <input
+                      id="slider-button-link"
                       className="input-field"
                       placeholder="E.g., /all-products or https://..."
                       value={formData.buttonLink}
@@ -482,33 +585,38 @@ const Sliders = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--bg)', padding: '14px 16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                  <label htmlFor="slider-is-active" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
                     <input
+                      id="slider-is-active"
                       type="checkbox"
                       checked={formData.isActive}
                       onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
                     />
-                    Active (Visible on public storefront)
+                    Active (Visible on storefronts)
                   </label>
 
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600 }}>
-                    Display Order:
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
+                    <label htmlFor="slider-order" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      Display Order:
+                    </label>
                     <input
+                      id="slider-order"
                       type="number"
                       className="input-field"
-                      style={{ width: '90px' }}
+                      style={{ width: '80px', height: '36px', textAlign: 'center' }}
                       value={formData.order}
                       onChange={e => setFormData({ ...formData, order: Number(e.target.value) })}
                     />
-                  </label>
+                  </div>
                 </div>
 
                 {/* Instant Media Preview inside Form */}
                 {currentPreviewSource && (
-                  <div style={{ marginTop: '12px', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '8px', background: '#f8fafc' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>
-                      MEDIA PREVIEW
+                  <div style={{ padding: '14px', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--bg)' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '8px', textTransform: 'uppercase' }}>
+                      Media Live Preview
                     </div>
                     {formData.mediaType === 'video' ? (
                       <video
@@ -518,21 +626,26 @@ const Sliders = () => {
                         muted
                         loop
                         playsInline
-                        style={{ width: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }}
+                        style={{ width: '100%', maxHeight: '180px', borderRadius: '6px', objectFit: 'cover' }}
                       />
                     ) : (
                       <img
                         src={currentPreviewSource}
                         alt="Preview"
-                        style={{ width: '100%', maxHeight: '200px', borderRadius: '8px', objectFit: 'cover' }}
-                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x200?text=Invalid+Image+URL'; }}
+                        style={{ width: '100%', maxHeight: '180px', borderRadius: '6px', objectFit: 'cover' }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/600x180?text=Invalid+Image+URL'; }}
                       />
                     )}
                   </div>
                 )}
 
-                <button type="submit" className="btn btn-primary" style={{ marginTop: '8px', padding: '12px' }}>
-                  {editId ? 'Update Slide' : 'Save & Publish Slide'}
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  disabled={submitting}
+                  style={{ width: '100%', height: '44px', fontSize: '14px', fontWeight: 600, borderRadius: '8px', marginTop: '6px' }}
+                >
+                  {submitting ? 'Saving Slide...' : (editId ? 'Update Slide' : 'Save & Publish Slide')}
                 </button>
               </form>
             </div>
