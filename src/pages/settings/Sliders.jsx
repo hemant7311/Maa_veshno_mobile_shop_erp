@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Eye, Pencil, Trash2, Play, UploadCloud, CheckCircle, X, Image as ImageIcon, Type, FileText, Users, Upload, Link, Hash, Video, Link2 } from 'lucide-react'
 import api from '../../services/api'
+import { getMediaUrl } from '../../config/env'
 
 const Sliders = () => {
   const [sliders, setSliders] = useState([])
@@ -262,7 +263,7 @@ const Sliders = () => {
                     >
                       {s.mediaType === 'image' ? (
                         <img
-                          src={s.mediaUrl}
+                          src={getMediaUrl(s.mediaUrl)}
                           alt={s.title}
                           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                           onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/100x56?text=Image'; }}
@@ -270,7 +271,7 @@ const Sliders = () => {
                       ) : (
                         <>
                           <video 
-                            src={s.mediaUrl} 
+                            src={getMediaUrl(s.mediaUrl)} 
                             style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }} 
                             muted 
                             preload="metadata"
@@ -581,7 +582,7 @@ const Sliders = () => {
                           {currentPreviewSource ? (
                             formData.mediaType === 'video' ? (
                               <video
-                                src={currentPreviewSource}
+                                src={getMediaUrl(currentPreviewSource)}
                                 autoPlay
                                 muted
                                 loop
@@ -590,7 +591,7 @@ const Sliders = () => {
                               />
                             ) : (
                               <img
-                                src={currentPreviewSource}
+                                src={getMediaUrl(currentPreviewSource)}
                                 alt="Preview"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x140?text=Invalid+Image+URL'; }}
@@ -624,7 +625,7 @@ const Sliders = () => {
                         <div style={{ width: '100%', height: '160px', marginTop: '16px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--white)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                            {formData.mediaType === 'video' ? (
                               <video
-                                src={currentPreviewSource}
+                                src={getMediaUrl(currentPreviewSource)}
                                 autoPlay
                                 muted
                                 loop
@@ -633,7 +634,7 @@ const Sliders = () => {
                               />
                             ) : (
                               <img
-                                src={currentPreviewSource}
+                                src={getMediaUrl(currentPreviewSource)}
                                 alt="Preview"
                                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/400x140?text=Invalid+Image+URL'; }}
@@ -772,7 +773,7 @@ const Sliders = () => {
                   <div style={{ flex: '1 1 280px', display: 'flex', justifyContent: 'center' }}>
                     {previewSlide.mediaType === 'video' ? (
                       <video
-                        src={previewSlide.mediaUrl}
+                        src={getMediaUrl(previewSlide.mediaUrl)}
                         controls
                         autoPlay
                         loop
@@ -782,7 +783,7 @@ const Sliders = () => {
                       />
                     ) : (
                       <img
-                        src={previewSlide.mediaUrl}
+                        src={getMediaUrl(previewSlide.mediaUrl)}
                         alt={previewSlide.title}
                         style={{ width: '100%', maxHeight: '220px', borderRadius: '10px', objectFit: 'cover' }}
                       />

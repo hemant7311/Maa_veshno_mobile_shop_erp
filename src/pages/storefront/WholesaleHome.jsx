@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { getMediaUrl } from '../../config/env'
 import { useAuth } from '../../context/AuthContext'
 import './WholesaleHome.css'
 
@@ -181,9 +182,9 @@ const WholesaleHome = () => {
                 </div>
                 <div className="ws-slide-media">
                   {slide.mediaType === 'video' ? (
-                    <video src={slide.mediaUrl} autoPlay loop muted playsInline className="ws-slide-img" />
+                    <video src={getMediaUrl(slide.mediaUrl)} autoPlay loop muted playsInline className="ws-slide-img" />
                   ) : (
-                    <img src={slide.mediaUrl} alt={slide.title} className="ws-slide-img" />
+                    <img src={getMediaUrl(slide.mediaUrl)} alt={slide.title} className="ws-slide-img" />
                   )}
                 </div>
               </div>
@@ -287,7 +288,7 @@ const WholesaleHome = () => {
                   </div>
 
                   {p.image ? (
-                    <img src={p.image} alt={p.productName} className="ws-card-img" />
+                    <img src={getMediaUrl(p.image)} alt={p.productName} className="ws-card-img" />
                   ) : (
                     <div className="ws-card-img-placeholder">
                       <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><polyline points="8 21 12 17 16 21"/></svg>

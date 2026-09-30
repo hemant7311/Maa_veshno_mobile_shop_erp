@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PublicLayout from '../components/layout/PublicLayout'
 import api from '../services/api'
+import { getMediaUrl } from '../config/env'
 
 const Home = () => {
   const navigate = useNavigate()
@@ -70,7 +71,7 @@ const Home = () => {
             <div className="modal-body portal-modal-body" style={{ display: 'flex', gap: '24px', padding: '16px 0' }}>
               <div className="modal-img-container" style={{ flex: 1, background: '#f8fafc', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '240px' }}>
                 <img
-                  src={selectedProduct.image || 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg'}
+                  src={getMediaUrl(selectedProduct.image) || 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg'}
                   alt={selectedProduct.productName}
                   style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px' }}
                 />
@@ -139,13 +140,13 @@ const Home = () => {
                       muted
                       playsInline
                       className="hero-slide-img"
-                      src={slide.mediaUrl}
+                      src={getMediaUrl(slide.mediaUrl)}
                       style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
                     />
                   ) : (
                     <img
                       className="hero-slide-img"
-                      src={slide.mediaUrl}
+                      src={getMediaUrl(slide.mediaUrl)}
                       alt={slide.title}
                       style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
                     />
@@ -200,7 +201,7 @@ const Home = () => {
               <p className="brand-desc">Realme Performance Real Quality</p>
               <span className="brand-shop-link">Shop Now →</span>
             </div>
-            <img src="https://images.unsplash.com/photo-1565849906662-68031f88e651?auto=format&fit=crop&w=140&q=80" alt="Realme" className="brand-card-img" />
+            <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=140&q=80" alt="Realme" className="brand-card-img" />
           </div>
 
           {/* OnePlus */}
@@ -236,7 +237,7 @@ const Home = () => {
               <div className="portal-product-card" key={p._id} onClick={() => setSelectedProduct(p)}>
                 <div className="product-card-img-wrapper">
                   <img
-                    src={p.image || 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg'}
+                    src={getMediaUrl(p.image) || 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg'}
                     alt={p.productName}
                     className="product-card-img"
                     style={{ objectFit: 'contain', padding: '10px' }}

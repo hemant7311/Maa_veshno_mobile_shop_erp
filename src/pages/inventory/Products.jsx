@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import api from '../../services/api'
+import { getMediaUrl } from '../../config/env'
 import { isValidIMEI } from '../../utils/validators'
 
 const formatPrice = (value) => `₹${Number(value || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`
@@ -346,7 +347,7 @@ const Products = () => {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: 'var(--bg-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', border: '1px solid var(--border)', flexShrink: 0 }}>
-                          <img src={product.image || 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg'} alt={product.productName} style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
+                          <img src={getMediaUrl(product.image) || 'https://fdn2.gsmarena.com/vv/pics/apple/apple-iphone-15-pro-max-1.jpg'} alt={product.productName} style={{ width: '100%', height: '100%', objectFit: 'contain', background: '#fff' }} />
                         </div>
                         <div>
                           <div style={{ fontWeight: 600 }}>{product.productName}</div>

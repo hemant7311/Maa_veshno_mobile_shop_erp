@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import PublicLayout from '../components/layout/PublicLayout'
 import api from '../services/api'
+import { getMediaUrl } from '../config/env'
 
 const AllProductsList = () => {
   const [searchParams] = useSearchParams()
@@ -136,7 +137,7 @@ const AllProductsList = () => {
                   <div className="portal-product-card" key={p._id} onClick={() => setSelectedProduct(p)}>
                     <div className="product-card-img-wrapper" style={{ height: '180px' }}>
                       <img
-                        src={p.image || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=300&q=80'}
+                        src={getMediaUrl(p.image) || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=300&q=80'}
                         alt={p.productName}
                         className="product-card-img"
                       />
@@ -171,7 +172,7 @@ const AllProductsList = () => {
             <div className="modal-body portal-modal-body" style={{ display: 'flex', gap: '24px', padding: '16px 0' }}>
               <div className="modal-img-container" style={{ flex: 1, background: '#f8fafc', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '240px' }}>
                 <img
-                  src={selectedProduct.image || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80'}
+                  src={getMediaUrl(selectedProduct.image) || 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=400&q=80'}
                   alt={selectedProduct.productName}
                   style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain', borderRadius: '12px' }}
                 />

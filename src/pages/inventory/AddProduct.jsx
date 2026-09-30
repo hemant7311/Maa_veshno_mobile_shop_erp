@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
+import { getMediaUrl } from '../../config/env'
 import { isValidIMEI, isValidMobile } from '../../utils/validators'
 
 const AddProduct = () => {
@@ -554,7 +555,7 @@ const AddProduct = () => {
                     <div key={index} style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', aspectRatio: '1', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', position: 'relative', overflow: 'hidden' }}>
                       {image ? (
                         <>
-                          <img src={image.preview} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={getMediaUrl(image.preview)} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           <button type="button" onClick={() => removeImage(index)} style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--danger-light)', border: 'none', color: 'var(--danger)', borderRadius: '50%', width: '18px', height: '18px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                         </>
                       ) : (
