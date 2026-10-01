@@ -1,3 +1,4 @@
+import EMIModal from '../../components/modals/EMIModal'
 import React, { useState, useEffect } from 'react'
 import api from '../../services/api'
 import ViewBillModal from '../../components/modals/ViewBillModal'
@@ -245,7 +246,7 @@ const ViewEntityFinancesModal = ({ entityName, onClose, onRefresh }) => {
             </div>
           )}
         </div>
-        {selectedCustomer && <CustomerFinanceDetailsModal record={selectedCustomer} onClose={() => setSelectedCustomer(null)} onRefresh={() => { fetchRecords(); if (onRefresh) onRefresh(); }} />}
+        {selectedCustomer && <EMIModal record={selectedCustomer} onClose={() => setSelectedCustomer(null)} onRefresh={() => { fetchRecords(); if (onRefresh) onRefresh(); }} />}
       </div>
     </div>
   )
@@ -341,6 +342,8 @@ const Finance = () => {
                 <th>Agent ID</th>
                 <th>Total Cases</th>
                 <th>Total Financed Amount (₹)</th>
+                <th>Total Paid (₹)</th>
+                <th>Total Pending (₹)</th>
                 {activeTab === 'private' && <th>Agent Login</th>}
                 <th>Action</th>
               </tr>
@@ -372,6 +375,8 @@ const Finance = () => {
                   </td>
                   <td style={{ fontWeight: '700', fontSize: '15px' }}>{item.totalCount}</td>
                   <td style={{ fontWeight: '600', color: 'var(--success)' }}>₹{Number(item.totalFinancedAmount || 0).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: '600', color: 'var(--primary)' }}>₹{Number(item.totalPaid || 0).toLocaleString('en-IN')}</td>
+                  <td style={{ fontWeight: '600', color: 'var(--danger)' }}>₹{Number(item.totalPending || 0).toLocaleString('en-IN')}</td>
                   {activeTab === 'private' && (
                     <td style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>
                       {item.agentUsername ? item.agentUsername : 'N/A'}
