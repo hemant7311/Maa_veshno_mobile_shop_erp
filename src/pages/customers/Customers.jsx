@@ -462,6 +462,25 @@ const Customers = () => {
     }
   }
 
+      const [deletingBillId, setDeletingBillId] = useState(null)
+
+  const handleDeleteBill = async (c) => {
+    if (window.confirm(`Are you sure you want to delete bill ${c.invoiceNumber}?\nCustomer: ${c.name}\nProduct: ${c.product}\nAmount: ₹${Number(c.amountDue + (c.amountPaid || 0) || 0).toLocaleString('en-IN')}`)) {
+      try {
+        setDeletingBillId(c.id)
+        const res = await api.delete(`/sales/${c.id}`)
+        if (res.data?.success) {
+          alert(`Bill ${c.invoiceNumber} deleted successfully.`)
+          fetchSales()
+        }
+      } catch (err) {
+        alert(err.response?.data?.message || err.message || 'Failed to delete bill')
+      } finally {
+        setDeletingBillId(null)
+      }
+    }
+  }
+
   const handleCancelBill = async (c) => {
     if (window.confirm(`Are you sure you want to cancel bill ${c.invoiceNumber}? Stock and IMEIs will be restored to inventory.`)) {
       try {
@@ -715,7 +734,7 @@ const Customers = () => {
 
                             <button
                               className="action-btn-icon"
-                              onClick={() => handleDeleteBill(c)}
+                              onClick={() => handleDeleteBill(c)} disabled={deletingBillId === c.id}
                               title="Delete Bill"
                               aria-label="Delete Bill"
                               style={{
@@ -789,7 +808,7 @@ const Customers = () => {
                       
                             <button
                               className="action-btn-icon"
-                              onClick={() => handleDeleteBill(c)}
+                              onClick={() => handleDeleteBill(c)} disabled={deletingBillId === c.id}
                               title="Delete Bill"
                               aria-label="Delete Bill"
                               style={{
@@ -830,6 +849,9 @@ const Customers = () => {
 }
 
 export default Customers
+
+
+
 
 
 
