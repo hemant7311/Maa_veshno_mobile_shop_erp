@@ -783,6 +783,10 @@ const Customers = () => {
                               <XCircle size={15} />
                               </button>
 
+
+                          </>
+                        )}
+                      
                             <button
                               className="action-btn-icon"
                               onClick={() => handleDeleteBill(c)}
@@ -803,8 +807,6 @@ const Customers = () => {
                             >
                               <Trash2 size={15} />
                             </button>
-                          </>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -828,5 +830,6 @@ const Customers = () => {
 }
 
 export default Customers
+
 
 
