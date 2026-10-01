@@ -715,9 +715,9 @@ const Customers = () => {
 
                             <button
                               className="action-btn-icon"
-                              onClick={() => handleDeleteDraft(c)}
-                              title="Delete Draft"
-                              aria-label="Delete Draft"
+                              onClick={() => handleDeleteBill(c)}
+                              title="Delete Bill"
+                              aria-label="Delete Bill"
                               style={{
                                 width: '32px',
                                 height: '32px',
@@ -781,6 +781,27 @@ const Customers = () => {
                               }}
                             >
                               <XCircle size={15} />
+                              </button>
+
+                            <button
+                              className="action-btn-icon"
+                              onClick={() => handleDeleteBill(c)}
+                              title="Delete Bill"
+                              aria-label="Delete Bill"
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#dc2626',
+                                background: 'rgba(220, 38, 38, 0.08)',
+                                border: '1px solid rgba(220, 38, 38, 0.2)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Trash2 size={15} />
                             </button>
                           </>
                         )}
@@ -807,3 +828,5 @@ const Customers = () => {
 }
 
 export default Customers
+
+
