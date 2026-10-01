@@ -42,7 +42,7 @@ const TRANSACTION_TYPE_CONFIG = {
   refund:            { label: 'Refund',            icon: '💰', cls: 'badge-danger' },
 }
 
-const INCOME_TYPES = new Set(['customer_payment', 'loan_payment', 'receivable_payment'])
+const INCOME_TYPES = new Set(['customer_payment', 'loan_payment', 'receivable_payment', 'emi'])
 const NEUTRAL_TYPES = new Set(['sale', 'purchase']) // For display purposes, these are neither direct cash in nor out, though purchase is an outflow of stock/money and sale is inflow of revenue. We will handle their display in the component.
 
 const TransactionTypeBadge = ({ type }) => {
