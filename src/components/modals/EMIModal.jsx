@@ -81,7 +81,19 @@ const EMIModal = ({ record, onClose, onRefresh }) => {
       }
     } catch (err) {
       console.error('Failed to sync EMI status', err);
-      alert(err.response?.data?.message || 'Failed to update EMI status');
+      const errData = err.response?.data || {};
+      let errorMsg = errData.message || 'Failed to update EMI status';
+      
+      // Detailed validation parsing
+      if (errData.errors && typeof errData.errors === 'object' && Object.keys(errData.errors).length > 0) {
+        // Exclude potentially sensitive fields if any exist (though usually field names are safe)
+        const details = Object.entries(errData.errors)
+          .map(([field, msg]) => `${field}: ${msg}`)
+          .join('\n');
+        errorMsg += '\n\nDetails:\n' + details;
+      }
+      
+      alert(errorMsg);
     } finally {
       setLoadingId(null);
     }

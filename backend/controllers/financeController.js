@@ -490,8 +490,9 @@ exports.updateEmiStatus = async (req, res, next) => {
       }
       installment.paymentDate = new Date();
 
-      await Transaction.create([{
-        transactionType: 'emi',
+      try {
+        await Transaction.create([{
+          transactionType: 'emi',
         referenceId: record._id,
         referenceNumber: record.billRef || `EMI-${record._id}`,
         description: `EMI Payment ${emiNumber} for ${record.customerName}`,
@@ -501,6 +502,17 @@ exports.updateEmiStatus = async (req, res, next) => {
         transactionDate: new Date(),
         createdBy: req.user?._id,
       }], { session });
+      } catch (err) {
+        if (err.name === 'ValidationError') {
+          console.error('[DIAGNOSTIC] Operation: Transaction.create (EMI Payment)');
+          console.error('[DIAGNOSTIC] Model: Transaction');
+          console.error('[DIAGNOSTIC] Record ID:', record._id, 'Installment:', emiNumber);
+          for (let field in err.errors) {
+            console.error('[DIAGNOSTIC] Invalid field:', field, '| Message:', err.errors[field].message, '| Type:', err.errors[field].kind);
+          }
+        }
+        throw err;
+      }
 
     } else if (status === 'Pending') {
       if (installment.paidAmount === 0) {
@@ -516,8 +528,9 @@ exports.updateEmiStatus = async (req, res, next) => {
       installment.paymentDate = null;
       record.paidEmis = record.paidEmis.filter(id => id !== emiNumber);
 
-      await Transaction.create([{
-        transactionType: 'refund',
+      try {
+        await Transaction.create([{
+          transactionType: 'refund',
         referenceId: record._id,
         referenceNumber: record.billRef || `EMI-${record._id}`,
         description: `EMI Payment ${emiNumber} REVERSAL for ${record.customerName}`,
@@ -527,9 +540,32 @@ exports.updateEmiStatus = async (req, res, next) => {
         transactionDate: new Date(),
         createdBy: req.user?._id,
       }], { session });
+      } catch (err) {
+        if (err.name === 'ValidationError') {
+          console.error('[DIAGNOSTIC] Operation: Transaction.create (Refund)');
+          console.error('[DIAGNOSTIC] Model: Transaction');
+          console.error('[DIAGNOSTIC] Record ID:', record._id, 'Installment:', emiNumber);
+          for (let field in err.errors) {
+            console.error('[DIAGNOSTIC] Invalid field:', field, '| Message:', err.errors[field].message, '| Type:', err.errors[field].kind);
+          }
+        }
+        throw err;
+      }
     }
 
-    await record.save({ session, validateModifiedOnly: true });
+    try {
+      await record.save({ session, validateModifiedOnly: true });
+    } catch (err) {
+      if (err.name === 'ValidationError') {
+        console.error('[DIAGNOSTIC] Operation: record.save()');
+        console.error('[DIAGNOSTIC] Model: FinanceRecord');
+        console.error('[DIAGNOSTIC] Record ID:', record._id, 'Installment:', emiNumber);
+        for (let field in err.errors) {
+          console.error('[DIAGNOSTIC] Invalid field:', field, '| Message:', err.errors[field].message, '| Type:', err.errors[field].kind);
+        }
+      }
+      throw err;
+    }
 
     // Two-way sync to Sale document if present
     if (record.saleId || record.billRef) {
@@ -551,7 +587,19 @@ exports.updateEmiStatus = async (req, res, next) => {
           else if (sale.amountPaid > 0) sale.billStatus = 'partially_paid'
           else sale.billStatus = 'due'
 
-          await sale.save({ session, validateModifiedOnly: true })
+          try {
+            await sale.save({ session, validateModifiedOnly: true });
+          } catch (err) {
+            if (err.name === 'ValidationError') {
+              console.error('[DIAGNOSTIC] Operation: sale.save()');
+              console.error('[DIAGNOSTIC] Model: Sale');
+              console.error('[DIAGNOSTIC] Sale ID:', sale._id, 'Record ID:', record._id, 'Installment:', emiNumber);
+              for (let field in err.errors) {
+                console.error('[DIAGNOSTIC] Invalid field:', field, '| Message:', err.errors[field].message, '| Type:', err.errors[field].kind);
+              }
+            }
+            throw err;
+          }
         }
       }
     }
