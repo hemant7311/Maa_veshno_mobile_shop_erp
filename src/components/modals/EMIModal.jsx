@@ -25,45 +25,28 @@ const EMIModal = ({ record, onClose, onRefresh }) => {
   })
 
   const toggleStatus = async (id) => {
-    if (loadingId) return // Prevent duplicate clicks
+      if (loadingId) return // Prevent duplicate clicks
 
-    const currentEmi = emiSchedule.find(e => e.id === id);
-    if (!currentEmi) return
+      const currentEmi = emiSchedule.find(e => e.id === id);
+      if (!currentEmi) return
 
-    let newStatus = currentEmi.status === 'Paid' ? 'Pending' : 'Paid';
-    let paymentAmount = undefined;
-    
-    if (currentEmi.status === 'Partially Paid') {
-      const action = prompt(`EMI ${id} is Partially Paid. Remaining: ₹${currentEmi.remainingAmount}.\nType 'pay' to pay remaining, or 'reverse' to undo payment:`, 'pay');
-      if (action === null) return;
-      if (action.trim().toLowerCase() === 'reverse') {
-         newStatus = 'Pending';
-      } else {
-         newStatus = 'Paid';
-      }
-    }
-
-    if (newStatus === 'Paid') {
-      const defaultAmount = currentEmi.remainingAmount !== undefined ? currentEmi.remainingAmount : currentEmi.amount;
-      const inputAmount = prompt(`Enter payment amount for EMI ${id} (Remaining: ₹${defaultAmount.toLocaleString('en-IN')}):`, defaultAmount);
-      if (inputAmount === null) return;
+      let newStatus = currentEmi.status === 'Paid' ? 'Pending' : 'Paid';
+      let paymentAmount = undefined;
       
-      paymentAmount = Number(inputAmount);
-      if (isNaN(paymentAmount) || paymentAmount <= 0) {
-        alert('Invalid amount entered.');
-        return;
+      if (currentEmi.status === 'Partially Paid') {
+        newStatus = 'Paid';
       }
-      if (paymentAmount > currentEmi.remainingAmount) {
-        alert(`Payment amount cannot exceed outstanding remaining amount (₹${currentEmi.remainingAmount})`);
-        return;
-      }
-    } else {
-      if (!window.confirm(`Are you sure you want to REVERSE this payment? This will refund ₹${currentEmi.paidAmount || currentEmi.amount} to customer balance.`)) {
-        return;
-      }
-    }
 
-    try {
+      if (newStatus === 'Paid') {
+        paymentAmount = currentEmi.remainingAmount !== undefined ? currentEmi.remainingAmount : currentEmi.amount;
+      } else {
+        if (!window.confirm(`Are you sure you want to REVERSE this payment? This will refund ₹${currentEmi.paidAmount || currentEmi.amount} to customer balance.`)) {
+          return;
+        }
+      }
+
+      try {
+
       setLoadingId(id);
       const res = await api.put(`/finance/${record._id}/emi/${id}`, { status: newStatus, amount: paymentAmount });
       if (res.data?.data?.installments) {
