@@ -37,7 +37,7 @@ const findOrCreateAgent = async (entityName, session) => {
     if (!agent.financeEntityKey) {
       agent.financeEntityName = String(entityName).trim()
       agent.financeEntityKey = normalizedName
-      await agent.save({ session })
+      await agent.save({ session, validateModifiedOnly: true })
     }
     return { agent, credentials: null, created: false }
   }
@@ -529,7 +529,7 @@ exports.updateEmiStatus = async (req, res, next) => {
       }], { session });
     }
 
-    await record.save({ session });
+    await record.save({ session, validateModifiedOnly: true });
 
     // Two-way sync to Sale document if present
     if (record.saleId || record.billRef) {
@@ -551,7 +551,7 @@ exports.updateEmiStatus = async (req, res, next) => {
           else if (sale.amountPaid > 0) sale.billStatus = 'partially_paid'
           else sale.billStatus = 'due'
 
-          await sale.save({ session })
+          await sale.save({ session, validateModifiedOnly: true })
         }
       }
     }
