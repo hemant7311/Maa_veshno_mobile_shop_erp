@@ -134,23 +134,27 @@ const Home = () => {
                 </div>
                 <div className="hero-slide-image-wrapper" style={{ flex: '1 1 300px', display: 'flex', justifyContent: 'center' }}>
                   {slide.mediaType === 'video' ? (
-                    <video
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="hero-slide-img"
-                      src={getMediaUrl(slide.mediaUrl || slide.imageUrl || slide.videoUrl)}
-                      style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
-                    />
-                  ) : (
-                    <img
-                      className="hero-slide-img"
-                      src={getMediaUrl(slide.mediaUrl || slide.imageUrl || slide.videoUrl)}
-                      alt={slide.title}
-                      style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
-                    />
-                  )}
+                      <video
+                        autoPlay
+                        loop
+                        muted
+                        playsInline
+                        preload="metadata"
+                        controls={false}
+                        className="hero-slide-img"
+                        src={getMediaUrl(slide.mediaUrl || slide.videoUrl || slide.imageUrl)}
+                        style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
+                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.style.background = '#f1f5f9'; e.target.parentElement.style.borderRadius = '14px'; }}
+                      />
+                    ) : (
+                      <img
+                        className="hero-slide-img"
+                        src={getMediaUrl(slide.mediaUrl || slide.imageUrl || slide.videoUrl)}
+                        alt={slide.title}
+                        style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
+                        onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.style.background = '#f1f5f9'; e.target.parentElement.style.borderRadius = '14px'; }}
+                      />
+                    )}
                 </div>
               </div>
             ))}
@@ -276,5 +280,7 @@ const Home = () => {
 }
 
 export default Home
+
+
 
 
