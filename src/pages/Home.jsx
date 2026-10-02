@@ -140,13 +140,13 @@ const Home = () => {
                       muted
                       playsInline
                       className="hero-slide-img"
-                      src={getMediaUrl(slide.mediaUrl)}
+                      src={getMediaUrl(slide.mediaUrl || slide.imageUrl || slide.videoUrl)}
                       style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
                     />
                   ) : (
                     <img
                       className="hero-slide-img"
-                      src={getMediaUrl(slide.mediaUrl)}
+                      src={getMediaUrl(slide.mediaUrl || slide.imageUrl || slide.videoUrl)}
                       alt={slide.title}
                       style={{ borderRadius: '14px', width: '100%', maxWidth: '440px', height: '248px', objectFit: 'cover', boxShadow: '0 12px 24px -10px rgba(0, 0, 0, 0.15)', border: '1px solid #e2e8f0' }}
                     />
@@ -213,25 +213,37 @@ const Home = () => {
             </div>
             <img src="https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=140&q=80" alt="OnePlus" className="brand-card-img" />
           </div>
+        
+          {/* Apple */}
+          <div className="brand-card card-apple" onClick={() => navigate('/all-products?brand=Apple')}>
+            <div className="brand-card-content">
+              <span className="brand-name" style={{ color: '#000000' }}>APPLE</span>
+              <p className="brand-desc">Premium iPhones & Accessories</p>
+              <span className="brand-shop-link">Shop Now &rarr;</span>
+            </div>
+            <img src="https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=140&q=80" alt="Apple" className="brand-card-img" />
+          </div>
         </div>
       </section>
 
       {/* Featured Products */}
+
       <section className="portal-featured-section">
         <div className="portal-container">
-          <div className="featured-section-header">
-            <h2 className="featured-title">Featured Products</h2>
-            <Link to="/all-products" className="featured-viewall-link">View All</Link>
+          
+          <div className="featured-section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+            <h2 className="featured-title" style={{ margin: 0 }}>Featured Products</h2>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <select className="form-select" value={filterBrand} onChange={e => { setFilterBrand(e.target.value); setCurrentPage(1); }} style={{ minWidth: '130px', margin: 0 }}>
+                {brands.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
+              </select>
+              <select className="form-select" value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setCurrentPage(1); }} style={{ minWidth: '130px', margin: 0 }}>
+                {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
+              </select>
+              <Link to="/all-products" className="featured-viewall-link" style={{ whiteSpace: 'nowrap' }}>View All</Link>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-            <select className="form-select" value={filterBrand} onChange={e => { setFilterBrand(e.target.value); setCurrentPage(1); }}>
-              {brands.map(b => <option key={b} value={b}>{b === 'All' ? 'All Brands' : b}</option>)}
-            </select>
-            <select className="form-select" value={filterCategory} onChange={e => { setFilterCategory(e.target.value); setCurrentPage(1); }}>
-              {categories.map(c => <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>)}
-            </select>
-          </div>
           <div className="featured-products-grid">
             {currentProducts.map(p => (
               <div className="portal-product-card" key={p._id} onClick={() => setSelectedProduct(p)}>
@@ -264,3 +276,5 @@ const Home = () => {
 }
 
 export default Home
+
+

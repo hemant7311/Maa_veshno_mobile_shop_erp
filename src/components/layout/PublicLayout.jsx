@@ -1,9 +1,27 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import api from '../../services/api'
 
 const PublicLayout = ({ children, initialSearch = '' }) => {
   const navigate = useNavigate()
-  const [searchQuery, setSearchQuery] = useState(initialSearch)
+    const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await api.get('/products/public')
+        if (res.data?.success) {
+          const prods = res.data.data || []
+          const uniqueCats = [...new Set(prods.map(p => p.categoryName || p.categoryId?.categoryName).filter(Boolean))]
+          setCategories(uniqueCats.slice(0, 8)) // max 8 for header/footer
+        }
+      } catch (err) {
+        console.error('Failed to load categories in header', err)
+      }
+    }
+    fetchCategories()
+  }, [])
 
   const handleSearchSubmit = (e) => {
     e.preventDefault()
@@ -52,9 +70,7 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
             <button className="portal-login-btn" onClick={() => navigate('/login')}>
               Login
             </button>
-            <button className="portal-getstarted-btn" onClick={() => navigate('/all-products')}>
-              Get Started
-            </button>
+
           </div>
         </div>
       </header>
@@ -66,12 +82,16 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
             <span>Mobile Phones</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
           </div>
-          <div className="nav-menu-links">
-            <Link to="/all-products?brand=Apple">Smartphones</Link>
-            <Link to="/all-products?category=Accessories">Accessories</Link>
-            <Link to="/all-products?brand=Samsung">Tablets</Link>
-            <Link to="/all-products?category=Chargers">Mobile Chargers</Link>
-            <Link to="/all-products">Other Devices</Link>
+                    <div className="nav-menu-links">
+            {categories.map((c, i) => (
+              <Link key={i} to={`/all-products?category=${encodeURIComponent(c)}`}>{c}</Link>
+            ))}
+            {categories.length === 0 && (
+              <>
+                <Link to="/all-products?category=Smartphones">Smartphones</Link>
+                <Link to="/all-products?category=Accessories">Accessories</Link>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -87,13 +107,13 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
           {/* Categories */}
           <div className="footer-col">
             <h4 className="footer-col-title">CATEGORIES</h4>
-            <ul className="footer-links">
-              <li><Link to="/all-products">Mobile Phones</Link></li>
-              <li><Link to="/all-products">Smartphones</Link></li>
-              <li><Link to="/all-products">Accessories</Link></li>
-              <li><Link to="/all-products">Tablets</Link></li>
-              <li><Link to="/all-products">Mobile Chargers</Link></li>
-              <li><Link to="/all-products">Other Devices</Link></li>
+                        <ul className="footer-links">
+              {categories.map((c, i) => (
+                <li key={i}><Link to={`/all-products?category=${encodeURIComponent(c)}`}>{c}</Link></li>
+              ))}
+              {categories.length === 0 && (
+                <li><Link to="/all-products">All Products</Link></li>
+              )}
             </ul>
           </div>
 
@@ -164,3 +184,6 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
 }
 
 export default PublicLayout
+
+
+
