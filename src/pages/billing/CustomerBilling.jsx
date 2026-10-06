@@ -585,7 +585,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
 
         <div className="modal-body" style={{ background: 'var(--white)', padding: '24px' }}>
           {/* ─── SINGLE PRINT AREA ─── */}
-          <div id="print-area" className="printable-invoice" style={{ border: '2px solid #1e3a8a', padding: '16px', background: '#fff', fontSize: '12px', color: '#000', fontFamily: 'monospace' }}>
+          <div id="print-area" className="printable-invoice customer-print-invoice" style={{ border: '2px solid #1e3a8a', padding: '16px', background: '#fff', fontSize: '12px', color: '#000', fontFamily: 'monospace' }}>
 
             
               <>
