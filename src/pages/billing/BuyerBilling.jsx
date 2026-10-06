@@ -405,6 +405,11 @@ const BuyerBilling = () => {
       api.get(`/sales/${editId}`).then(res => {
         if (res.data?.success) {
           const sale = res.data.data
+            if (sale.saleType !== 'wholesale') {
+               alert('This bill is not a wholesale bill.');
+               window.location.href = '/buyers';
+               return;
+            }
           setExistingInvoiceNo(sale.invoiceNumber)
           setForm({
             shopName: sale.customerName || '',

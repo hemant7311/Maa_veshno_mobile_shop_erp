@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 /* ── View Products Modal ── */
 const ViewProductsModal = ({ wholesaler, onClose, onMakePayment }) => {
@@ -120,7 +121,10 @@ const Buyers = () => {
   const [selectedWholesaler, setSelectedWholesaler] = useState(null)
 
 
+  const navigate = useNavigate()
   const [buyers, setBuyers] = useState([])
+  const [selectedDeleteBill, setSelectedDeleteBill] = useState(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [loading, setLoading] = useState(true)
 
   React.useEffect(() => {
@@ -132,7 +136,7 @@ const Buyers = () => {
       const { default: api } = await import('../../services/api')
       const res = await api.get('/sales')
       if (res.data?.success) {
-        const wholesaleSales = res.data.data.filter(s => s.saleType === 'wholesale')
+        const wholesaleSales = res.data.data.filter(s => s.saleType === 'wholesale' && s.status !== 'cancelled' && s.billStatus !== 'cancelled')
         const mapped = wholesaleSales.map(s => ({
           id: s._id,
           name: s.customerName,
@@ -362,6 +366,42 @@ const Buyers = () => {
           onClose={() => setSelectedWholesaler(null)} 
           onMakePayment={handleMakePayment}
         />
+      )}
+    
+      {selectedDeleteBill && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>Delete Wholesale Bill?</h3>
+              <button className="close-btn" onClick={() => !isDeleting && setSelectedDeleteBill(null)}>&times;</button>
+            </div>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <div style={{ padding: '12px', background: '#f8fafc', borderRadius: '6px' }}>
+                <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}>Buyer/Shop Name</p>
+                <p style={{ margin: 0, fontWeight: 600 }}>{selectedDeleteBill.name}</p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px' }}>
+                  <div>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}>Total Amount</p>
+                    <p style={{ margin: 0, fontWeight: 600 }}>₹{Number(selectedDeleteBill.total).toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <p style={{ margin: '0 0 4px 0', fontSize: '13px', color: '#64748b' }}>Products</p>
+                    <p style={{ margin: 0, fontWeight: 600 }}>{selectedDeleteBill.products}</p>
+                  </div>
+                </div>
+              </div>
+              <p style={{ color: 'var(--danger)', fontSize: '13px', margin: 0, fontWeight: 500 }}>
+                Warning: Deleting this bill will restore stock/IMEI and reverse related financial records.
+              </p>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                <button type="button" className="btn btn-outline" onClick={() => setSelectedDeleteBill(null)} disabled={isDeleting}>Cancel</button>
+                <button type="button" className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={handleDeleteSubmit} disabled={isDeleting}>
+                  {isDeleting ? 'Deleting...' : 'Delete Bill'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
