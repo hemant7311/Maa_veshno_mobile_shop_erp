@@ -28,6 +28,9 @@ const AddProduct = () => {
   const [amountPaidNow, setAmountPaidNow] = useState(0)
   const [totalPurchasePrice, setTotalPurchasePrice] = useState('')
   const [selectedSupplierId, setSelectedSupplierId] = useState('')
+  const [showAddSupplierModal, setShowAddSupplierModal] = useState(false)
+  const [newSupplierForm, setNewSupplierForm] = useState({ name: '', shopName: '', phone: '', type: 'company', status: 'active' })
+  const [newSupplierSaving, setNewSupplierSaving] = useState(false)
   const [successNotice, setSuccessNotice] = useState('')
   const [images, setImages] = useState([])
   const fileInputRef = React.useRef(null)
@@ -60,6 +63,31 @@ const AddProduct = () => {
       updated.splice(index, 1)
       return updated
     })
+  }
+
+  const handleSaveNewSupplier = async (e) => {
+    e.preventDefault()
+    if (!newSupplierForm.name) return setError('Supplier name is required.')
+    if (newSupplierForm.type === 'private' && newSupplierForm.phone && newSupplierForm.phone.length !== 10) return setError('Private supplier phone must be exactly 10 digits.')
+    
+    try {
+      setNewSupplierSaving(true)
+      const res = await api.post('/suppliers', newSupplierForm)
+      if (res.data.success) {
+        const newlyCreated = res.data.data
+        setSuppliers(prev => [newlyCreated, ...prev])
+        setSupplierType(newlyCreated.type)
+        setSelectedSupplierId(newlyCreated._id)
+        setShowAddSupplierModal(false)
+        setSuccessNotice(`Supplier "${newlyCreated.name}" added successfully.`)
+        setNewSupplierForm({ name: '', shopName: '', phone: '', type: supplierType, status: 'active' })
+        setTimeout(() => setSuccessNotice(''), 3000)
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create supplier')
+    } finally {
+      setNewSupplierSaving(false)
+    }
   }
 
   useEffect(() => {
@@ -202,93 +230,19 @@ const AddProduct = () => {
       return
     }
 
-    let finalSupplierId = ''
-    let supplierName = form.brand.trim()
-    let shopName = form.model.trim()
-    let supplierPhone = form.displaySize.trim()
-
-    if (supplierType === 'company') {
-      if (!selectedCompanyCategoryId) {
-        setError('Please select a Company.')
-        return
-      }
-      const matchedCategory = categories.find(c => c._id === selectedCompanyCategoryId)
-      if (!matchedCategory) {
-        setError('Selected company brand not found.')
-        return
-      }
-      supplierName = matchedCategory.categoryName.trim()
-      shopName = ''
-      supplierPhone = ''
-
-      // Check if this company supplier already exists in DB
-      const existingCompany = suppliers.find(s => s.type === 'company' && s.name.toLowerCase() === supplierName.toLowerCase())
-      if (existingCompany) {
-        finalSupplierId = existingCompany._id
-      } else {
-        // Create new company supplier inline
-        try {
-          setSaving(true)
-          const res = await api.post('/suppliers', {
-            name: supplierName,
-            type: 'company',
-            status: 'active'
-          })
-          if (res.data.success) {
-            finalSupplierId = res.data.data._id
-          }
-        } catch (err) {
-          setError(err.response?.data?.message || 'Could not create Company record.')
-          setSaving(false)
-          return
-        }
-      }
-    } else {
-      // Private Supplier: validation and creation
-      if (!supplierName) {
-        setError('Please enter a Supplier Name.')
-        return
-      }
-      if (!supplierPhone) {
-        setError('Please enter a Supplier Phone Number.')
-        return
-      }
-      if (!isValidMobile(supplierPhone.trim())) {
-        setError('Mobile number must be exactly 10 digits.')
-        return
-      }
-
-      // Check if this private supplier already exists
-      const existingPrivate = suppliers.find(s => s.type === 'private' && s.name.toLowerCase() === supplierName.toLowerCase() && s.shopName?.toLowerCase() === shopName.toLowerCase())
-      if (existingPrivate) {
-        finalSupplierId = existingPrivate._id
-      } else {
-        try {
-          setSaving(true)
-          const res = await api.post('/suppliers', {
-            name: supplierName,
-            type: 'private',
-            shopName: shopName,
-            phone: supplierPhone,
-            status: 'active'
-          })
-          if (res.data.success) {
-            finalSupplierId = res.data.data._id
-          }
-        } catch (err) {
-          setError(err.response?.data?.message || 'Could not create Private Supplier record.')
-          setSaving(false)
-          return
-        }
-      }
+    
+    if (!selectedSupplierId) {
+      setError('Please select a Supplier.')
+      return
     }
-
-        const payload = {
+    
+    // We keep form.brand, form.model, form.displaySize intact! We don't overwrite them with supplier info anymore.
+    const payload = {
       productName: form.productName.trim(), categoryId: form.categoryId, variant: finalVariant, imeiNumber: form.imeiNumber.trim(), oldImeiNumber: form.oldImeiNumber?.trim() || '',
       purchasePrice: Number(form.buyingPrice || 0), salePrice: Number(form.sellingPrice), wholesalePrice: Number(form.wholesalePrice || 0),
       status: form.status.toLowerCase(), brand: supplierName, model: shopName, displaySize: supplierPhone,
       battery: form.battery.trim(), processor: form.processor.trim(), network: form.network, description: form.description.trim(),
-      supplierId: finalSupplierId,
+      supplierId: selectedSupplierId,
       supplierType: supplierType,
       amountPaidNow: Number(amountPaidNow || 0),
       totalPurchasePrice: Number(totalPurchasePrice || form.buyingPrice || 0),
@@ -455,118 +409,100 @@ const AddProduct = () => {
           </div>
 
           {/* Supplier Information */}
-          <div className="card">
-            <div className="card-header"><span className="card-title">Supplier Information</span></div>
-            <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              
-              {/* Type selector toggle */}
-              <div className="form-grid" style={{ gap: '14px', borderBottom: '1px solid var(--border)', paddingBottom: '14px' }}>
-                <div className="form-group form-grid-full">
-                  <label className="form-label" style={{ fontWeight: 600 }}>Supplier Type</label>
-                  <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
-                      <input type="radio" name="supplierType" checked={supplierType === 'company'} onChange={() => { setSupplierType('company'); setSelectedCompanyCategoryId(form.categoryId) }} />
-                      Company Mall (Direct)
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
-                      <input type="radio" name="supplierType" checked={supplierType === 'private'} onChange={() => { setSupplierType('private'); setSelectedCompanyCategoryId('') }} />
-                      Private Supplier
-                    </label>
-                  </div>
-                </div>
+        <div className="card">
+          <div className="card-header"><span className="card-title">Supplier Information</span></div>
+          <div className="card-body">
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontWeight: 600 }}>Supplier Type</label>
+              <div style={{ display: 'flex', gap: '20px', marginTop: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
+                  <input type="radio" name="supplierType" checked={supplierType === 'company'} onChange={() => { setSupplierType('company'); setSelectedSupplierId(''); setNewSupplierForm(p => ({...p, type: 'company'})) }} />
+                  Company Mall (Direct)
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 }}>
+                  <input type="radio" name="supplierType" checked={supplierType === 'private'} onChange={() => { setSupplierType('private'); setSelectedSupplierId(''); setNewSupplierForm(p => ({...p, type: 'private'})) }} />
+                  Private Supplier
+                </label>
               </div>
+            </div>
 
-              {/* Dynamic Inputs depending on Supplier Type */}
-              {supplierType === 'company' ? (
-                <div className="form-grid" style={{ gap: '14px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Select Company (Categories) <span className="required">*</span></label>
-                    <select 
-                      className="form-select" 
-                      value={selectedCompanyCategoryId} 
-                      onChange={(e) => setSelectedCompanyCategoryId(e.target.value)}
-                    >
-                      <option value="">-- Choose Company --</option>
-                      {categories.map(c => (
-                        <option key={c._id} value={c._id}>
-                          {c.categoryName}
+            <div className="form-grid" style={{ gap: '14px' }}>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label className="form-label">
+                  {supplierType === 'company' ? 'Select Company Supplier' : 'Select Private Supplier'} <span className="required">*</span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <select 
+                    className="form-select" 
+                    value={selectedSupplierId} 
+                    onChange={(e) => setSelectedSupplierId(e.target.value)}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">-- Select {supplierType === 'company' ? 'Company' : 'Supplier'} --</option>
+                    {suppliers
+                      .filter(s => s.type === supplierType && (s.status === 'active' || s._id === selectedSupplierId))
+                      .map(s => (
+                        <option key={s._id} value={s._id}>
+                          {s.name} {s.shopName ? `(${s.shopName})` : ''} {s.phone ? `- ${s.phone}` : ''}
                         </option>
                       ))}
-                    </select>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>Category names are used as company identifiers.</p>
-                  </div>
-                  
-                  <div className="form-group">
-                    <label className="form-label">Company Phone Number</label>
-                    <input 
-                      className="form-input" 
-                      type="number" 
-                      name="displaySize" 
-                      value={form.displaySize} 
-                      onChange={handleChange} 
-                      placeholder="Enter company phone number" 
-                    />
-                  </div>
+                  </select>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => { setNewSupplierForm(p => ({...p, type: supplierType})); setShowAddSupplierModal(true); }} style={{ whiteSpace: 'nowrap' }}>
+                    + Add New Supplier
+                  </button>
                 </div>
-              ) : (
-                <div className="form-grid" style={{ gap: '14px' }}>
-                  <div className="form-group">
-                    <label className="form-label">Supplier Name <span className="required">*</span></label>
-                    <input className="form-input" name="brand" value={form.brand} onChange={handleChange} placeholder="Enter supplier name" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Shop Name <span className="required">*</span></label>
-                    <input className="form-input" name="model" value={form.model} onChange={handleChange} placeholder="Enter shop name" />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Supplier Phone <span className="required">*</span></label>
-                    <input className="form-input" type="number" name="displaySize" value={form.displaySize} onChange={handleChange} placeholder="Enter phone number" />
-                  </div>
-                </div>
-              )}
-
-              {/* Paid and Pending balance calculations */}
-              <div className="form-grid" style={{ gap: '14px', borderTop: '1px solid var(--border)', paddingTop: '14px', marginTop: '6px' }}>
-                <div className="form-group">
-                  <label className="form-label">Total Purchase Amount (₹)</label>
-                  <input 
-                    className="form-input" 
-                    type="number" 
-                    min="0" 
-                    value={totalPurchasePrice} 
-                    onChange={(e) => setTotalPurchasePrice(e.target.value)} 
-                    placeholder={form.buyingPrice ? `Default: ₹ ${form.buyingPrice}` : "Enter total purchase amount"} 
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Amount Paid Now (₹)</label>
-                  <input 
-                    className="form-input" 
-                    type="number" 
-                    min="0" 
-                    max={totalPurchasePrice || form.buyingPrice || undefined}
-                    value={amountPaidNow} 
-                    onChange={(e) => setAmountPaidNow(Math.max(0, Number(e.target.value)))} 
-                    placeholder="Enter amount paid" 
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Pending Amount (₹)</label>
-                  <input 
-                    className="form-input" 
-                    type="text" 
-                    disabled 
-                    value={Math.max(0, Number(totalPurchasePrice || form.buyingPrice || 0) - amountPaidNow).toLocaleString('en-IN')} 
-                    style={{ background: '#f8fafc', fontWeight: 600, color: 'var(--text-primary)' }}
-                  />
-                </div>
+                {selectedSupplierId && (() => {
+                   const selSup = suppliers.find(s => s._id === selectedSupplierId);
+                   if (!selSup) return <div style={{ fontSize: '12px', color: 'var(--danger)', marginTop: '8px' }}>Previously selected supplier is no longer available.</div>;
+                   return (
+                     <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                       <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>Supplier Name: {selSup.name}</div>
+                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Shop Name: {selSup.shopName || 'N/A'}</div>
+                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Phone: {selSup.phone || 'N/A'}</div>
+                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Type: {selSup.type === 'company' ? 'Company Mall (Direct)' : 'Private Supplier'}</div>
+                     </div>
+                   )
+                })()}
               </div>
 
+              <div className="form-group">
+                <label className="form-label">Total Purchase Amount (₹)</label>
+                <input 
+                  className="form-input" 
+                  type="number" 
+                  min="0" 
+                  value={totalPurchasePrice} 
+                  onChange={(e) => setTotalPurchasePrice(Math.max(0, Number(e.target.value)))} 
+                  placeholder="Enter total purchase amount" 
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Amount Paid Now (₹)</label>
+                <input 
+                  className="form-input" 
+                  type="number" 
+                  min="0" 
+                  max={totalPurchasePrice || form.buyingPrice || undefined}
+                  value={amountPaidNow} 
+                  onChange={(e) => setAmountPaidNow(Math.max(0, Number(e.target.value)))} 
+                  placeholder="Enter amount paid" 
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Pending Amount (₹)</label>
+                <input 
+                  className="form-input" 
+                  type="text" 
+                  disabled 
+                  value={Math.max(0, Number(totalPurchasePrice || form.buyingPrice || 0) - amountPaidNow).toLocaleString('en-IN')} 
+                  style={{ background: '#f8fafc', fontWeight: 600, color: 'var(--text-primary)' }}
+                />
+              </div>
             </div>
           </div>
+        </div>
 
-
-          {/* Product Images */}
+        {/* Product Images */}
           <div className="card">
             <div className="card-header"><span className="card-title">Product Images</span></div>
             <div className="card-body">
@@ -673,6 +609,46 @@ const AddProduct = () => {
           </div>
         </div>
       </form>
+
+      {/* Add Supplier Modal */}
+      {showAddSupplierModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="card" style={{ width: '400px', maxWidth: '90%' }}>
+            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span className="card-title">Add New {newSupplierForm.type === 'company' ? 'Company' : 'Supplier'}</span>
+              <button type="button" onClick={() => setShowAddSupplierModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px' }}>&times;</button>
+            </div>
+            <div className="card-body">
+              <form onSubmit={handleSaveNewSupplier} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group">
+                  <label className="form-label">Supplier Type</label>
+                  <select className="form-select" value={newSupplierForm.type} onChange={(e) => setNewSupplierForm(p => ({...p, type: e.target.value}))}>
+                    <option value="company">Company Mall (Direct)</option>
+                    <option value="private">Private Supplier</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Supplier Name <span className="required">*</span></label>
+                  <input className="form-input" required value={newSupplierForm.name} onChange={(e) => setNewSupplierForm(p => ({...p, name: e.target.value}))} placeholder="Enter name" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Shop Name</label>
+                  <input className="form-input" value={newSupplierForm.shopName} onChange={(e) => setNewSupplierForm(p => ({...p, shopName: e.target.value}))} placeholder="Enter shop name (optional)" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone {newSupplierForm.type === 'private' && <span className="required">*</span>}</label>
+                  <input className="form-input" required={newSupplierForm.type === 'private'} type="tel" value={newSupplierForm.phone} onChange={(e) => setNewSupplierForm(p => ({...p, phone: e.target.value}))} placeholder="Enter 10-digit phone" />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                  <button type="button" className="btn btn-outline" onClick={() => setShowAddSupplierModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={newSupplierSaving}>{newSupplierSaving ? 'Saving...' : 'Save Supplier'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

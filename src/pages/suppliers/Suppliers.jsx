@@ -21,6 +21,9 @@ const Suppliers = () => {
   const [editingSupplier, setEditingSupplier] = useState(null)
   const [editForm, setEditForm] = useState({ name: '', shopName: '', phone: '', type: 'company', status: 'active' })
   const [savingEdit, setSavingEdit] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [addForm, setAddForm] = useState({ name: '', shopName: '', phone: '', type: 'company', status: 'active' })
+  const [savingAdd, setSavingAdd] = useState(false)
 
   // Stats calculation
   const totalSuppliersCount = suppliers.length
@@ -155,6 +158,35 @@ const Suppliers = () => {
     }
   }
 
+const handleAddSubmit = async (e) => {
+    e.preventDefault()
+    if (!addForm.name.trim()) return alert('Name is required.')
+    if (addForm.type === 'private' && addForm.phone && addForm.phone.trim() !== '') {
+      if (!isValidMobile(addForm.phone.trim())) {
+        return alert('Mobile number must be exactly 10 digits.')
+      }
+    }
+
+    try {
+      setSavingAdd(true)
+      const res = await api.post('/suppliers', addForm)
+      if (res.data.success) {
+        setShowAddModal(false)
+        setAddForm({ name: '', shopName: '', phone: '', type: 'company', status: 'active' })
+        loadSuppliers()
+        alert('Supplier added successfully!')
+      }
+    } catch (err) {
+      if (err.response?.status === 409) {
+         alert('Supplier with this name/shop/phone already exists.')
+      } else {
+         alert(err.response?.data?.message || 'Could not add supplier.')
+      }
+    } finally {
+      setSavingAdd(false)
+    }
+  }
+
   const handleDeleteSupplier = async (id, name) => {
     if (!window.confirm(`Are you sure you want to delete supplier "${name}"? This will also unlink all associated products.`)) return
 
@@ -188,10 +220,13 @@ const Suppliers = () => {
     <div>
       {error && <div className="alert alert-danger" style={{ marginBottom: '16px' }}>{error}</div>}
 
-      <div className="page-header">
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div className="page-header-left">
           <h1>Suppliers & Companies</h1>
           <p>Manage direct companies, private suppliers, invoices, and ledger returns</p>
+        </div>
+        <div>
+          <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ Add Supplier</button>
         </div>
       </div>
 
@@ -469,6 +504,52 @@ const Suppliers = () => {
           </div>
         </div>
       )}
+      {/* Add Supplier Modal */}
+      {showAddModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <h3>Add New Supplier</h3>
+              <button className="close-btn" onClick={() => setShowAddModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <form onSubmit={handleAddSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div className="form-group">
+                  <label className="form-label">Supplier Type</label>
+                  <select className="form-select" value={addForm.type} onChange={e => setAddForm({...addForm, type: e.target.value})}>
+                    <option value="company">Company Mall (Direct)</option>
+                    <option value="private">Private Supplier</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Supplier Name <span className="required">*</span></label>
+                  <input className="form-input" required value={addForm.name} onChange={e => setAddForm({...addForm, name: e.target.value})} placeholder="Enter name" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Shop Name</label>
+                  <input className="form-input" value={addForm.shopName} onChange={e => setAddForm({...addForm, shopName: e.target.value})} placeholder="Enter shop name (optional)" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone {addForm.type === 'private' && <span className="required">*</span>}</label>
+                  <input className="form-input" type="tel" required={addForm.type === 'private'} value={addForm.phone} onChange={e => setAddForm({...addForm, phone: e.target.value})} placeholder="Enter 10-digit phone" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Status</label>
+                  <select className="form-select" value={addForm.status} onChange={e => setAddForm({...addForm, status: e.target.value})}>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                  <button type="button" className="btn btn-outline" onClick={() => setShowAddModal(false)}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={savingAdd}>{savingAdd ? 'Saving...' : 'Add Supplier'}</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Supplier Modal */}
       {editingSupplier && (
         <div className="modal-overlay" onClick={() => setEditingSupplier(null)}>
