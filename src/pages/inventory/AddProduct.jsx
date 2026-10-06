@@ -9,7 +9,7 @@ const AddProduct = () => {
   const { id } = useParams()
   const isEditing = Boolean(id)
   const [form, setForm] = useState({
-    productName: '', categoryId: '', variant: '', imeiNumber: '',
+    productName: '', categoryId: '', variant: '', customRam: '', customStorage: '', imeiNumber: '', oldImeiNumber: '',
     buyingPrice: '', sellingPrice: '', wholesalePrice: '', status: 'Active',
     brand: '', model: '', displaySize: '', battery: '',
     processor: '', network: '', description: ''
@@ -88,13 +88,30 @@ const AddProduct = () => {
       if (isEditing) {
         try {
           const productResponse = await api.get(`/products/${id}`)
-          if (productResponse.data?.success) {
-            const product = productResponse.data.data
-            const categoryId = product.categoryId?._id || product.categoryId || ''
-            const categoryName = product.categoryId?.categoryName || loadedCategories.find((cat) => cat._id === categoryId)?.categoryName || '-'
-            const populatedForm = {
-              productName: product.productName || '', categoryId, variant: product.variant || '', imeiNumber: product.imeiNumber || '',
-              buyingPrice: product.purchasePrice ?? '', sellingPrice: product.salePrice ?? '', wholesalePrice: product.wholesalePrice ?? '',
+                      if (productResponse.data?.success) {
+              const product = productResponse.data.data
+              const categoryId = product.categoryId?._id || product.categoryId || ''
+              const categoryName = product.categoryId?.categoryName || loadedCategories.find((cat) => cat._id === categoryId)?.categoryName || '-'
+              
+              const variants = ['2GB / 32GB', '4GB / 64GB', '4GB / 128GB', '6GB / 128GB', '8GB / 128GB', '8GB / 256GB', '12GB / 256GB', '16GB / 256GB']
+              let formVariant = product.variant || ''
+              let customRam = ''
+              let customStorage = ''
+              
+              if (formVariant && !variants.includes(formVariant)) {
+                 const parts = formVariant.split(' / ')
+                 if (parts.length === 2) {
+                   customRam = parts[0]
+                   customStorage = parts[1]
+                 } else {
+                   customRam = formVariant
+                 }
+                 formVariant = 'Custom'
+              }
+
+              const populatedForm = {
+                productName: product.productName || '', categoryId, variant: formVariant, customRam, customStorage, imeiNumber: product.imeiNumber || '', oldImeiNumber: product.imeiNumber || '',
+                buyingPrice: product.purchasePrice ?? '', sellingPrice: product.salePrice ?? '', wholesalePrice: product.wholesalePrice ?? '',
               status: product.status === 'inactive' ? 'Inactive' : 'Active', brand: product.brand || '', model: product.model || '',
               displaySize: product.displaySize || '', battery: product.battery || '', processor: product.processor || '',
               network: product.network || '', description: product.description || '',
@@ -166,13 +183,22 @@ const AddProduct = () => {
     event?.preventDefault()
     setError('')
     setSuccessNotice('')
-    if (!form.productName || !form.categoryId || !form.variant || !form.imeiNumber || !form.sellingPrice) {
+        if (!form.productName || !form.categoryId || !form.variant || !form.imeiNumber || !form.sellingPrice) {
       setError('Please complete all required product details before saving.')
       return
     }
 
-    if (form.imeiNumber && form.imeiNumber !== 'N/A' && !isValidIMEI(form.imeiNumber.trim())) {
-      setError('IMEI must be exactly 15 digits.')
+    let finalVariant = form.variant
+    if (form.variant === 'Custom') {
+      if (!form.customRam || !form.customStorage) {
+        setError('Please enter RAM and Storage for custom variant.')
+        return
+      }
+      finalVariant = `${form.customRam.trim().toUpperCase()} / ${form.customStorage.trim().toUpperCase()}`
+    }
+
+    if (form.imeiNumber && form.imeiNumber !== 'N/A' && form.imeiNumber !== 'Multiple' && !isValidIMEI(form.imeiNumber.trim())) {
+      setError('IMEI number must be exactly 15 digits.')
       return
     }
 
@@ -257,8 +283,8 @@ const AddProduct = () => {
       }
     }
 
-    const payload = {
-      productName: form.productName.trim(), categoryId: form.categoryId, variant: form.variant, imeiNumber: form.imeiNumber.trim(),
+        const payload = {
+      productName: form.productName.trim(), categoryId: form.categoryId, variant: finalVariant, imeiNumber: form.imeiNumber.trim(), oldImeiNumber: form.oldImeiNumber?.trim() || '',
       purchasePrice: Number(form.buyingPrice || 0), salePrice: Number(form.sellingPrice), wholesalePrice: Number(form.wholesalePrice || 0),
       status: form.status.toLowerCase(), brand: supplierName, model: shopName, displaySize: supplierPhone,
       battery: form.battery.trim(), processor: form.processor.trim(), network: form.network, description: form.description.trim(),
@@ -300,9 +326,13 @@ const AddProduct = () => {
           navigate('/products', { state: { notice: 'Product added successfully.' } })
         }
       }
-    } catch (requestError) {
+        } catch (requestError) {
       const errors = requestError.response?.data?.errors
-      setError(Object.values(errors || {})[0] || requestError.response?.data?.message || 'Could not save the product. Please try again.')
+      let errorMsg = Object.values(errors || {})[0] || requestError.response?.data?.message || 'Could not save the product. Please try again.'
+      if (requestError.response?.status === 409 && errorMsg.toLowerCase().includes('imei')) {
+        errorMsg = `IMEI number ${form.imeiNumber.trim()} is already added.`
+      }
+      setError(errorMsg)
     } finally {
       setSaving(false)
     }
@@ -363,13 +393,26 @@ const AddProduct = () => {
                     {categories.map((cat) => <option key={cat._id} value={cat._id}>{cat.categoryName}</option>)}
                   </select>
                 </div>
-                <div className="form-group">
+                                <div className="form-group">
                   <label className="form-label">Variant (RAM &amp; GB) <span className="required">*</span></label>
                   <select className="form-select" name="variant" value={form.variant} onChange={handleChange}>
                     <option value="">Select RAM &amp; GB</option>
-                    {variants.map(v => <option key={v}>{v}</option>)}
+                    {variants.map(v => <option key={v} value={v}>{v}</option>)}
+                    <option value="Custom">Custom</option>
                   </select>
                 </div>
+                {form.variant === 'Custom' && (
+                  <>
+                    <div className="form-group">
+                      <label className="form-label">Custom RAM <span className="required">*</span></label>
+                      <input className="form-input" name="customRam" value={form.customRam} onChange={handleChange} placeholder="e.g. 12GB" />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Custom Storage <span className="required">*</span></label>
+                      <input className="form-input" name="customStorage" value={form.customStorage} onChange={handleChange} placeholder="e.g. 512GB" />
+                    </div>
+                  </>
+                )}
                 <div className="form-group">
                   <label className="form-label">IMEI Number <span className="required">*</span></label>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -635,3 +678,5 @@ const AddProduct = () => {
 }
 
 export default AddProduct
+
+
