@@ -602,7 +602,7 @@ const PrintPreviewModal = ({ editingSaleId, existingInvoiceNo, setExistingInvoic
                     <div style={{ fontSize: '13px', border: '1.5px solid #1e3a8a', padding: '3px 8px', borderRadius: '4px', display: 'inline-block', marginBottom: '4px' }}>{currentBillStatus === 'draft' ? 'DRAFT / HOLD BILL' : (billType === 'gst' ? 'TAX INVOICE' : 'RETAIL INVOICE')}</div>
                     <div>MOB: +91-9837616333</div>
                     <div>Email: maaveshnomvm@gmail.com</div>
-                    <div style={{ maxWidth: '240px', fontSize: '9px', marginTop: '2px' }}>ADDRESS: NEAR GOPAL SWEET HOUSE JALESAR ROAD FIROZABAD</div>
+                    <div style={{ maxWidth: '240px', fontSize: '9px', marginTop: '2px' }}>ADDRESS: NEAR GOPAL SWEET HOUSE, INFRONT OF GUPTA TENT HOUSE, JALESAR ROAD, FIROZABAD - 283 203</div>
                   </div>
                 </div>
 

@@ -36,7 +36,7 @@ const ContactUs = () => {
               <span style={{ fontSize: '20px' }}>📍</span>
               <div>
                 <strong style={{ display: 'block', color: '#0f172a', fontSize: '14px' }}>Main Address</strong>
-                <span style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.4 }}>Maa Veshno Mobile, Shop No. 5, Ground Floor, Central Market, New Delhi, India</span>
+                <span style={{ fontSize: '13.5px', color: '#64748b', lineHeight: 1.4 }}>Near Gopal Sweet House, Infront of Gupta Tent House, Jalesar Road, Firozabad - 283 203</span>
               </div>
             </div>
 
@@ -44,7 +44,7 @@ const ContactUs = () => {
               <span style={{ fontSize: '20px' }}>📞</span>
               <div>
                 <strong style={{ display: 'block', color: '#0f172a', fontSize: '14px' }}>Helpline Numbers</strong>
-                <span style={{ fontSize: '13.5px', color: '#64748b' }}>+91 98765 43210 / +91 91234 56789</span>
+                <span style={{ fontSize: '13.5px', color: '#64748b' }}>+91 98376 16333</span>
               </div>
             </div>
 
@@ -52,7 +52,7 @@ const ContactUs = () => {
               <span style={{ fontSize: '20px' }}>✉️</span>
               <div>
                 <strong style={{ display: 'block', color: '#0f172a', fontSize: '14px' }}>Email Queries</strong>
-                <span style={{ fontSize: '13.5px', color: '#64748b' }}>support@maaveshnomobile.com / wholesale@maaveshnomobile.com</span>
+                <span style={{ fontSize: '13.5px', color: '#64748b' }}>maaveshnomvm@gmail.com</span>
               </div>
             </div>
 

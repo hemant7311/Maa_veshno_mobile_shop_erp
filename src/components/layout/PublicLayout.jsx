@@ -64,7 +64,7 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
           {/* Contacts and buttons */}
           <div className="portal-header-actions">
             <div className="header-contact-info">
-              <span className="contact-phone">📞 +91 98765 43210</span>
+              <span className="contact-phone">📞 +91 98376 16333</span>
               <span className="contact-time">Mon - Sat 10:00 AM - 8:00 PM</span>
             </div>
             <button className="portal-login-btn" onClick={() => navigate('/login')}>
@@ -151,7 +151,7 @@ const PublicLayout = ({ children, initialSearch = '' }) => {
                   <path d="M23.498 6.163a3.003 3.003 0 0 0-2.11-2.11C19.518 3.545 12 3.545 12 3.545s-7.518 0-9.388.508a3.003 3.003 0 0 0-2.11 2.11C0 8.033 0 12 0 12s0 3.967.502 5.837a3.003 3.003 0 0 0 2.11 2.11c1.87.508 9.388.508 9.388.508s7.518 0 9.388-.508a3.003 3.003 0 0 0 2.11-2.11C24 15.967 24 12 24 12s0-3.967-.502-5.837zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
                 </svg>
               </a>
-              <a href="https://wa.me/919876543210" target="_blank" rel="noopener noreferrer" className="social-icon-btn w" title="WhatsApp">
+              <a href="https://wa.me/919837616333" target="_blank" rel="noopener noreferrer" className="social-icon-btn w" title="WhatsApp">
                 <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.73-1.45L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.725 1.451 5.097 0 9.25-4.154 9.253-9.252.001-2.47-.961-4.794-2.709-6.543C16.172 3.06 13.85 2.1 11.382 2.1 6.286 2.1 2.133 6.253 2.131 11.35c0 1.62.43 3.202 1.25 4.616l-.995 3.635 3.731-.977z"/>
                 </svg>

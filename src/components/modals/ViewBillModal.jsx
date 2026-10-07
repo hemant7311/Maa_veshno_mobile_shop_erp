@@ -142,7 +142,7 @@ const ViewBillModal = ({ saleId, invoiceNumber, onClose }) => {
                     <img src="/logo.png" alt="MVM" style={{ width: '50px', height: '50px', objectFit: 'contain' }} />
                     <div style={{ textAlign: 'left' }}>
                       <div style={{ fontSize: '22px', fontWeight: '900', color: '#1e3a8a' }}>MAA VESHNO MOBILE</div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>Near Bus Stand, City Center</div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>Near Gopal Sweet House, Infront of Gupta Tent House, Jalesar Road, Firozabad - 283 203</div>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '12px' }}>

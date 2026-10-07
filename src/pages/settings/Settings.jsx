@@ -3,11 +3,11 @@ import React, { useState } from 'react'
 const Settings = () => {
   const [form, setForm] = useState({
     shopName: 'Maa Veshno Mobile',
-    ownerName: 'Admin User',
+    ownerName: 'Rajeev Gupta',
     gstNumber: '07ABCDE1234F1Z5',
-    phone: '9876543210',
-    email: 'admin@maaveshno.com',
-    address: 'Shop No. 12, Main Market, Delhi',
+    phone: '+91 9837616333',
+    email: 'maaveshnomvm@gmail.com',
+    address: 'Near Gopal Sweet House, Infront of Gupta Tent House, Jalesar Road, Firozabad - 283 203',
     invoicePrefix: 'MVM',
     taxPercentage: '18',
   })
